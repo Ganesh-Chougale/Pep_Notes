@@ -1,4 +1,4 @@
-package com.horizone.pep_notes.ui.people
+package com.horizone.pep_notes.ui.labels
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -14,16 +14,20 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -35,30 +39,39 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
-import com.horizone.pep_notes.data.model.Person
-import com.horizone.pep_notes.ui.nav.NavRoutes
-import com.horizone.pep_notes.util.DateFormatter
-import com.horizone.pep_notes.viewmodel.PersonViewModel
+import com.horizone.pep_notes.data.model.PersonLabel
+import com.horizone.pep_notes.viewmodel.LabelViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PeopleListScreen(
+fun PersonLabelsScreen(
     navController: NavHostController,
-    viewModel: PersonViewModel = hiltViewModel()
+    viewModel: LabelViewModel = hiltViewModel()
 ) {
-    val allPersons by viewModel.allPersons.collectAsState(initial = emptyList())
-    val searchQuery by viewModel.searchQuery.collectAsState()
-    val searchResults by viewModel.searchResults.collectAsState()
+    val labels by viewModel.personLabels.collectAsState(initial = emptyList())
     var showAddDialog by remember { mutableStateOf(false) }
 
-    val displayedPersons = if (searchQuery.isEmpty()) allPersons else searchResults
-
     Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Person Labels") },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showAddDialog = true },
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Person")
+                Icon(Icons.Default.Add, contentDescription = "Add Label")
             }
         }
     ) { innerPadding ->
@@ -68,26 +81,7 @@ fun PeopleListScreen(
                 .padding(innerPadding)
                 .padding(16.dp)
         ) {
-            // Search bar
-            TextField(
-                value = searchQuery,
-                onValueChange = { viewModel.updateSearchQuery(it) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                placeholder = { Text("Search people...") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                ),
-                singleLine = true
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // People list
-            if (displayedPersons.isEmpty()) {
+            if (labels.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -95,7 +89,7 @@ fun PeopleListScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = if (searchQuery.isEmpty()) "No people yet. Add one!" else "No results found.",
+                        text = "No labels yet. Add one!",
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -104,15 +98,10 @@ fun PeopleListScreen(
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(displayedPersons) { person ->
-                        PersonCard(
-                            person = person,
-                            onClick = {
-                                navController.navigate(NavRoutes.PersonNotes.createRoute(person.id))
-                            },
-                            onEdit = {
-                                navController.navigate(NavRoutes.PersonEdit.createRoute(person.id))
-                            }
+                    items(labels) { label ->
+                        LabelCard(
+                            label = label,
+                            onDelete = { viewModel.deletePersonLabel(label) }
                         )
                     }
                 }
@@ -120,12 +109,11 @@ fun PeopleListScreen(
         }
     }
 
-    // Add person dialog
     if (showAddDialog) {
-        AddPersonDialog(
+        AddLabelDialog(
             onDismiss = { showAddDialog = false },
             onAdd = { name ->
-                viewModel.createPerson(name)
+                viewModel.createPersonLabel(name)
                 showAddDialog = false
             }
         )
@@ -133,15 +121,12 @@ fun PeopleListScreen(
 }
 
 @Composable
-fun PersonCard(
-    person: Person,
-    onClick: () -> Unit,
-    onEdit: () -> Unit
+fun LabelCard(
+    label: PersonLabel,
+    onDelete: () -> Unit
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
+        modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
@@ -153,45 +138,41 @@ fun PersonCard(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = person.name,
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Created: ${DateFormatter.formatDate(person.createdAt)}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            Text(
+                text = label.labelName,
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.weight(1f)
+            )
+            IconButton(onClick = onDelete) {
+                Icon(Icons.Default.Delete, contentDescription = "Delete")
             }
         }
     }
 }
 
 @Composable
-fun AddPersonDialog(
+fun AddLabelDialog(
     onDismiss: () -> Unit,
     onAdd: (String) -> Unit
 ) {
-    var personName by remember { mutableStateOf("") }
+    var labelName by remember { mutableStateOf("") }
 
     androidx.compose.material3.AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add Person") },
+        title = { Text("Add Label") },
         text = {
             TextField(
-                value = personName,
-                onValueChange = { personName = it },
-                label = { Text("Person Name") },
+                value = labelName,
+                onValueChange = { labelName = it },
+                label = { Text("Label Name") },
                 modifier = Modifier.fillMaxWidth()
             )
         },
         confirmButton = {
             androidx.compose.material3.TextButton(
                 onClick = {
-                    if (personName.isNotBlank()) {
-                        onAdd(personName)
+                    if (labelName.isNotBlank()) {
+                        onAdd(labelName)
                     }
                 }
             ) {
