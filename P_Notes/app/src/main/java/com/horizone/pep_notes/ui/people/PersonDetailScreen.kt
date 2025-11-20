@@ -2,6 +2,7 @@ package com.horizone.pep_notes.ui.people
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -19,6 +20,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -86,6 +88,10 @@ fun PersonDetailScreen(
     var selectedYear by remember { mutableStateOf(YearMonth.now().year) }
     var selectedMonth by remember { mutableStateOf(YearMonth.now().monthValue) }
     var showPersonDetailsDialog by remember { mutableStateOf(false) }
+    var noteSortOrder by remember { mutableStateOf("descending") }
+    var isNoteSortMenuExpanded by remember { mutableStateOf(false) }
+    var noteToDelete by remember { mutableStateOf<Note?>(null) }
+    var showDeleteNoteConfirmDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(personId) {
         if (personId != -1) {
@@ -358,27 +364,72 @@ fun PersonDetailScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // 4. Notes section with Add button
+                    // 4. Notes section with filter and add button - all in one row
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 12.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Notes",
+                            text = "${person.name} Notes",
                             style = MaterialTheme.typography.titleMedium
                         )
                         
-                        // 5. Add note button
-                        Button(
-                            onClick = { showAddNoteDialog = true },
-                            modifier = Modifier.height(36.dp)
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("+ Add Note")
+                            // Sort filter for notes
+                            Box {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.clickable { isNoteSortMenuExpanded = !isNoteSortMenuExpanded }
+                                ) {
+                                    Icon(
+                                        imageVector = if (noteSortOrder == "descending") Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp,
+                                        contentDescription = "Sort order",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.padding(end = 4.dp)
+                                    )
+                                    Text(
+                                        text = if (noteSortOrder == "descending") "Newest" else "Oldest",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                                
+                                DropdownMenu(
+                                    expanded = isNoteSortMenuExpanded,
+                                    onDismissRequest = { isNoteSortMenuExpanded = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("Newest First (Descending)") },
+                                        onClick = {
+                                            noteSortOrder = "descending"
+                                            isNoteSortMenuExpanded = false
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Oldest First (Ascending)") },
+                                        onClick = {
+                                            noteSortOrder = "ascending"
+                                            isNoteSortMenuExpanded = false
+                                        }
+                                    )
+                                }
+                            }
+                            
+                            // Add note button
+                            Button(
+                                onClick = { showAddNoteDialog = true },
+                                modifier = Modifier.height(36.dp)
+                            ) {
+                                Text("+ Add Note")
+                            }
                         }
                     }
-
-                    Spacer(modifier = Modifier.height(8.dp))
 
                     // Filter notes by selected month/year
                     val filteredNotes = if (selectedMonthYear != null) {
@@ -389,7 +440,7 @@ fun PersonDetailScreen(
                         notesForPerson
                     }
 
-                    // Notes list in descending order
+                    // Notes list with sort order
                     if (filteredNotes.isEmpty()) {
                         Text(
                             text = if (selectedMonthYear != null) "No notes in this month" else "No notes yet",
@@ -402,7 +453,13 @@ fun PersonDetailScreen(
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            filteredNotes.sortedByDescending { it.createdAt }.forEach { note ->
+                            val sortedNotes = if (noteSortOrder == "descending") {
+                                filteredNotes.sortedByDescending { it.createdAt }
+                            } else {
+                                filteredNotes.sortedBy { it.createdAt }
+                            }
+                            
+                            sortedNotes.forEach { note ->
                                 NoteCard(
                                     note = note,
                                     onEdit = {
@@ -410,6 +467,10 @@ fun PersonDetailScreen(
                                         editedNoteTitle = note.title
                                         editedNoteText = note.text
                                         showEditNoteConfirmDialog = true
+                                    },
+                                    onDelete = {
+                                        noteToDelete = note
+                                        showDeleteNoteConfirmDialog = true
                                     }
                                 )
                             }
@@ -521,10 +582,43 @@ fun PersonDetailScreen(
             }
         )
     }
+
+    // Delete note confirmation dialog
+    if (showDeleteNoteConfirmDialog && noteToDelete != null) {
+        AlertDialog(
+            onDismissRequest = {
+                showDeleteNoteConfirmDialog = false
+                noteToDelete = null
+            },
+            title = { Text("Delete Note") },
+            text = { Text("Are you sure you want to delete this note?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        noteViewModel.deleteNote(noteToDelete!!)
+                        showDeleteNoteConfirmDialog = false
+                        noteToDelete = null
+                    }
+                ) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteNoteConfirmDialog = false
+                        noteToDelete = null
+                    }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 }
 
 @Composable
-fun NoteCard(note: Note, onEdit: () -> Unit = {}) {
+fun NoteCard(note: Note, onEdit: () -> Unit = {}, onDelete: () -> Unit = {}) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -534,7 +628,7 @@ fun NoteCard(note: Note, onEdit: () -> Unit = {}) {
         Column(
             modifier = Modifier.padding(12.dp)
         ) {
-            // Title and Edit button row
+            // Title and Edit/Delete buttons row
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -563,6 +657,19 @@ fun NoteCard(note: Note, onEdit: () -> Unit = {}) {
                         imageVector = Icons.Default.Edit,
                         contentDescription = "Edit note",
                         tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+                
+                IconButton(
+                    onClick = onDelete,
+                    modifier = Modifier
+                        .width(32.dp)
+                        .height(32.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Delete note",
+                        tint = MaterialTheme.colorScheme.error
                     )
                 }
             }

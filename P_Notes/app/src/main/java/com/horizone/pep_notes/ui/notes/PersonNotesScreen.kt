@@ -15,9 +15,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -58,6 +63,8 @@ fun PersonNotesScreen(
     val notes by noteViewModel.notesForPerson.collectAsState()
     val selectedPerson by personViewModel.selectedPerson.collectAsState()
     var showAddNoteDialog by remember { mutableStateOf(false) }
+    var sortOrder by remember { mutableStateOf("descending") }
+    var isSortMenuExpanded by remember { mutableStateOf(false) }
 
     LaunchedEffect(personId) {
         if (personId != -1) {
@@ -68,10 +75,10 @@ fun PersonNotesScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(selectedPerson?.name ?: "Notes") },
+                title = { Text("${selectedPerson?.name ?: "Person"} Notes") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -95,6 +102,59 @@ fun PersonNotesScreen(
                 .padding(innerPadding)
                 .padding(16.dp)
         ) {
+            // Sort filter
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Notes",
+                    style = MaterialTheme.typography.titleMedium
+                )
+                
+                Box {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable { isSortMenuExpanded = !isSortMenuExpanded }
+                    ) {
+                        Icon(
+                            imageVector = if (sortOrder == "descending") Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp,
+                            contentDescription = "Sort order",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(end = 4.dp)
+                        )
+                        Text(
+                            text = if (sortOrder == "descending") "Newest" else "Oldest",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    
+                    DropdownMenu(
+                        expanded = isSortMenuExpanded,
+                        onDismissRequest = { isSortMenuExpanded = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Newest First (Descending)") },
+                            onClick = {
+                                sortOrder = "descending"
+                                isSortMenuExpanded = false
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Oldest First (Ascending)") },
+                            onClick = {
+                                sortOrder = "ascending"
+                                isSortMenuExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
+            
             if (notes.isEmpty()) {
                 Box(
                     modifier = Modifier
@@ -109,10 +169,16 @@ fun PersonNotesScreen(
                     )
                 }
             } else {
+                val sortedNotes = if (sortOrder == "descending") {
+                    notes.sortedByDescending { it.createdAt }
+                } else {
+                    notes.sortedBy { it.createdAt }
+                }
+                
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(notes) { note ->
+                    items(sortedNotes) { note ->
                         NoteCard(
                             note = note,
                             onClick = {
@@ -149,21 +215,33 @@ fun NoteCard(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = note.text.take(100) + if (note.text.length > 100) "..." else "",
-                style = MaterialTheme.typography.bodyMedium,
-                maxLines = 2
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = DateFormatter.formatDateTime(note.createdAt),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = note.text.take(100) + if (note.text.length > 100) "..." else "",
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 2
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = DateFormatter.formatDateTime(note.createdAt),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Icon(
+                imageVector = Icons.Default.Edit,
+                contentDescription = "Edit note",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(start = 8.dp)
             )
         }
     }
