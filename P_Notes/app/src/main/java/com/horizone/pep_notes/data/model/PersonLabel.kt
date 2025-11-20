@@ -7,5 +7,6 @@ import androidx.room.PrimaryKey
 data class PersonLabel(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-    val labelName: String
+    val labelName: String,
+    val colorCode: String = "#FF6B6B" // Default color (red)
 )

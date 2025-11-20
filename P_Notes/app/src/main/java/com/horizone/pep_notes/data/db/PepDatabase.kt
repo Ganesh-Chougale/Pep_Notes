@@ -24,7 +24,7 @@ import com.horizone.pep_notes.util.Converters
         NoteLabel::class,
         NoteLabelCrossRef::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -44,6 +44,12 @@ abstract class PepDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE person_labels ADD COLUMN colorCode TEXT NOT NULL DEFAULT '#FF6B6B'")
+            }
+        }
+
         fun getDatabase(context: Context): PepDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -51,7 +57,7 @@ abstract class PepDatabase : RoomDatabase() {
                     PepDatabase::class.java,
                     "pep_database"
                 )
-                    .addMigrations(MIGRATION_1_2)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                     .build()
                 INSTANCE = instance
                 instance

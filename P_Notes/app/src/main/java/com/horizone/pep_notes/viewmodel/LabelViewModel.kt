@@ -21,6 +21,7 @@ class LabelViewModel @Inject constructor(
     // Person labels
     private val _personLabels = personLabelRepository.getAllLabels()
     val personLabels = _personLabels
+    val allPersonLabels = _personLabels
 
     // Note labels
     private val _noteLabels = noteLabelRepository.getAllLabels()
@@ -35,11 +36,11 @@ class LabelViewModel @Inject constructor(
     val error = _error.asStateFlow()
 
     // Person label operations
-    fun createPersonLabel(labelName: String) {
+    fun createPersonLabel(labelName: String, colorCode: String = "#FF6B6B") {
         viewModelScope.launch {
             try {
                 _isLoading.value = true
-                val label = PersonLabel(labelName = labelName)
+                val label = PersonLabel(labelName = labelName, colorCode = colorCode)
                 personLabelRepository.insertLabel(label)
                 _error.value = null
             } catch (e: Exception) {
