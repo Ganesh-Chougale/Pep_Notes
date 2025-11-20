@@ -8,15 +8,17 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -71,8 +73,13 @@ fun PersonDetailScreen(
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var deleteConfirmationInput by remember { mutableStateOf("") }
     var showAddNoteDialog by remember { mutableStateOf(false) }
+    var newNoteTitle by remember { mutableStateOf("") }
     var newNoteText by remember { mutableStateOf("") }
     var showFinalDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var editingNote by remember { mutableStateOf<Note?>(null) }
+    var editedNoteTitle by remember { mutableStateOf("") }
+    var editedNoteText by remember { mutableStateOf("") }
+    var showEditNoteConfirmDialog by remember { mutableStateOf(false) }
     var isDropdownExpanded by remember { mutableStateOf(false) }
     var selectedMonthYear by remember { mutableStateOf<YearMonth?>(null) }
     var isMonthYearDropdownExpanded by remember { mutableStateOf(false) }
@@ -93,7 +100,7 @@ fun PersonDetailScreen(
                 title = { Text("HOME") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -396,7 +403,15 @@ fun PersonDetailScreen(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             filteredNotes.sortedByDescending { it.createdAt }.forEach { note ->
-                                NoteCard(note = note)
+                                NoteCard(
+                                    note = note,
+                                    onEdit = {
+                                        editingNote = note
+                                        editedNoteTitle = note.title
+                                        editedNoteText = note.text
+                                        showEditNoteConfirmDialog = true
+                                    }
+                                )
                             }
                         }
                     }
@@ -459,19 +474,48 @@ fun PersonDetailScreen(
         )
     }
 
+    // Edit note confirmation dialog
+    if (showEditNoteConfirmDialog && editingNote != null) {
+        EditNoteConfirmDialog(
+            originalTitle = editingNote!!.title,
+            editedTitle = editedNoteTitle,
+            originalText = editingNote!!.text,
+            editedText = editedNoteText,
+            onEditedTitleChange = { editedNoteTitle = it },
+            onEditedTextChange = { editedNoteText = it },
+            onConfirm = {
+                noteViewModel.updateNote(editingNote!!.copy(title = editedNoteTitle, text = editedNoteText))
+                showEditNoteConfirmDialog = false
+                editingNote = null
+                editedNoteTitle = ""
+                editedNoteText = ""
+            },
+            onDismiss = {
+                showEditNoteConfirmDialog = false
+                editingNote = null
+                editedNoteTitle = ""
+                editedNoteText = ""
+            }
+        )
+    }
+
     // Add note dialog
     if (showAddNoteDialog && selectedPerson != null) {
         AddNoteDialog(
+            noteTitle = newNoteTitle,
+            onNoteTitleChange = { newNoteTitle = it },
             noteText = newNoteText,
             onNoteTextChange = { newNoteText = it },
             onAdd = {
                 if (newNoteText.isNotBlank()) {
-                    noteViewModel.createNote(selectedPerson!!.id, newNoteText)
+                    noteViewModel.createNote(selectedPerson!!.id, newNoteTitle, newNoteText)
+                    newNoteTitle = ""
                     newNoteText = ""
                     showAddNoteDialog = false
                 }
             },
             onDismiss = {
+                newNoteTitle = ""
                 newNoteText = ""
                 showAddNoteDialog = false
             }
@@ -480,7 +524,7 @@ fun PersonDetailScreen(
 }
 
 @Composable
-fun NoteCard(note: Note) {
+fun NoteCard(note: Note, onEdit: () -> Unit = {}) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -490,12 +534,48 @@ fun NoteCard(note: Note) {
         Column(
             modifier = Modifier.padding(12.dp)
         ) {
+            // Title and Edit button row
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (note.title.isNotEmpty()) {
+                    Text(
+                        text = note.title,
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.weight(1f)
+                    )
+                } else {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+                
+                IconButton(
+                    onClick = onEdit,
+                    modifier = Modifier
+                        .width(32.dp)
+                        .height(32.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Edit note",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+            
+            // Note text
             Text(
                 text = note.text,
                 style = MaterialTheme.typography.bodySmall,
-                maxLines = 2
+                maxLines = 3
             )
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            // Date
             Text(
                 text = DateFormatter.formatDate(note.createdAt),
                 style = MaterialTheme.typography.labelSmall,
@@ -608,6 +688,8 @@ fun DeleteConfirmDialog(
 
 @Composable
 fun AddNoteDialog(
+    noteTitle: String,
+    onNoteTitleChange: (String) -> Unit,
     noteText: String,
     onNoteTextChange: (String) -> Unit,
     onAdd: () -> Unit,
@@ -617,13 +699,25 @@ fun AddNoteDialog(
         onDismissRequest = onDismiss,
         title = { Text("Add Note") },
         text = {
-            TextField(
-                value = noteText,
-                onValueChange = onNoteTextChange,
-                label = { Text("Note content") },
-                modifier = Modifier.fillMaxWidth(),
-                minLines = 3
-            )
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                TextField(
+                    value = noteTitle,
+                    onValueChange = onNoteTitleChange,
+                    label = { Text("Note Title (Optional)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                
+                TextField(
+                    value = noteText,
+                    onValueChange = onNoteTextChange,
+                    label = { Text("Note content") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 3
+                )
+            }
         },
         confirmButton = {
             TextButton(
@@ -739,6 +833,93 @@ fun PersonDetailsDialog(
         confirmButton = {
             TextButton(onClick = onDismiss) {
                 Text("Close")
+            }
+        }
+    )
+}
+
+@Composable
+fun EditNoteConfirmDialog(
+    originalTitle: String,
+    editedTitle: String,
+    originalText: String,
+    editedText: String,
+    onEditedTitleChange: (String) -> Unit,
+    onEditedTextChange: (String) -> Unit,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Edit Note") },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+            ) {
+                // Original vs Current Title
+                if (originalTitle.isNotEmpty()) {
+                    Column {
+                        Text(
+                            text = "Original Title",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = originalTitle,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                // Edit Title
+                TextField(
+                    value = editedTitle,
+                    onValueChange = onEditedTitleChange,
+                    label = { Text("Title") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                // Original vs Current Text
+                Column {
+                    Text(
+                        text = "Original Note",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = originalText,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 3
+                    )
+                }
+
+                // Edit Text
+                TextField(
+                    value = editedText,
+                    onValueChange = onEditedTextChange,
+                    label = { Text("Note content") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 3
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm,
+                enabled = editedText.isNotBlank()
+            ) {
+                Text("Apply Changes")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
             }
         }
     )

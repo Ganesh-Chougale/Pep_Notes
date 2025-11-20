@@ -24,6 +24,7 @@ data class Note(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
     val personId: Int,
+    val title: String = "",
     val text: String,
     val createdAt: LocalDateTime = LocalDateTime.now(),
     val updatedAt: LocalDateTime = LocalDateTime.now()

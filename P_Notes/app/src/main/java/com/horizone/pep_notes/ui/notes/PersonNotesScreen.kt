@@ -129,7 +129,7 @@ fun PersonNotesScreen(
         AddNoteDialog(
             onDismiss = { showAddNoteDialog = false },
             onAdd = { text ->
-                noteViewModel.createNote(personId, text)
+                noteViewModel.createNote(personId, "", text)
                 showAddNoteDialog = false
             }
         )
@@ -172,7 +172,7 @@ fun NoteCard(
 @Composable
 fun AddNoteDialog(
     onDismiss: () -> Unit,
-    onAdd: (String) -> Unit
+    onAdd: (text: String) -> Unit
 ) {
     var noteText by remember { mutableStateOf("") }
 
