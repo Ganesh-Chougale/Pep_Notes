@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.horizone.pep_notes.ui.people.PersonDetailScreen
 import com.horizone.pep_notes.ui.people.PeopleListScreen
 import com.horizone.pep_notes.ui.people.PersonEditScreen
 import com.horizone.pep_notes.ui.notes.PersonNotesScreen
@@ -20,6 +21,14 @@ fun AppNavHost(navController: NavHostController) {
     ) {
         composable(NavRoutes.PeopleList.route) {
             PeopleListScreen(navController = navController)
+        }
+
+        composable(NavRoutes.PersonDetail.route) { backStackEntry ->
+            val personId = backStackEntry.arguments?.getString("personId")?.toIntOrNull() ?: -1
+            PersonDetailScreen(
+                personId = personId,
+                navController = navController
+            )
         }
 
         composable(NavRoutes.PersonEdit.route) { backStackEntry ->

@@ -72,6 +72,22 @@ class PersonViewModel @Inject constructor(
         }
     }
 
+    fun loadPersonById(personId: Int) {
+        viewModelScope.launch {
+            try {
+                val person = personRepository.getPersonById(personId)
+                if (person != null) {
+                    _selectedPerson.value = person
+                    personRepository.getLabelsForPerson(person.id).collect { labels ->
+                        _labelsForPerson.value = labels
+                    }
+                }
+            } catch (e: Exception) {
+                _error.value = e.message
+            }
+        }
+    }
+
     fun createPerson(name: String) {
         viewModelScope.launch {
             try {
@@ -92,6 +108,7 @@ class PersonViewModel @Inject constructor(
             try {
                 _isLoading.value = true
                 personRepository.updatePerson(person)
+                _selectedPerson.value = person
                 _error.value = null
             } catch (e: Exception) {
                 _error.value = e.message

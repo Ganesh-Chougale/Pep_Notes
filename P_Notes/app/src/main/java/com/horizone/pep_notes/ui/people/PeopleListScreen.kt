@@ -108,10 +108,7 @@ fun PeopleListScreen(
                         PersonCard(
                             person = person,
                             onClick = {
-                                navController.navigate(NavRoutes.PersonNotes.createRoute(person.id))
-                            },
-                            onEdit = {
-                                navController.navigate(NavRoutes.PersonEdit.createRoute(person.id))
+                                navController.navigate(NavRoutes.PersonDetail.createRoute(person.id))
                             }
                         )
                     }
@@ -135,8 +132,7 @@ fun PeopleListScreen(
 @Composable
 fun PersonCard(
     person: Person,
-    onClick: () -> Unit,
-    onEdit: () -> Unit
+    onClick: () -> Unit
 ) {
     Card(
         modifier = Modifier

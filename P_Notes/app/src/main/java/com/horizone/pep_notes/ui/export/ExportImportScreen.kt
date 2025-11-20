@@ -19,18 +19,25 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import com.horizone.pep_notes.viewmodel.ExportImportViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ExportImportScreen(navController: NavHostController) {
-    val exportStatus = remember { mutableStateOf("") }
-    val importStatus = remember { mutableStateOf("") }
+fun ExportImportScreen(
+    navController: NavHostController,
+    viewModel: ExportImportViewModel = hiltViewModel()
+) {
+    val exportStatus by viewModel.exportStatus.collectAsState()
+    val importStatus by viewModel.importStatus.collectAsState()
+    val isExporting by viewModel.isExporting.collectAsState()
+    val isImporting by viewModel.isImporting.collectAsState()
 
     Scaffold(
         topBar = {
@@ -65,20 +72,19 @@ fun ExportImportScreen(navController: NavHostController) {
 
             // Export section
             Button(
-                onClick = {
-                    exportStatus.value = "Export feature coming soon..."
-                },
-                modifier = Modifier.fillMaxWidth()
+                onClick = { viewModel.exportData() },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isExporting
             ) {
-                Text("Export Data")
+                Text(if (isExporting) "Exporting..." else "Export Data")
             }
 
-            if (exportStatus.value.isNotEmpty()) {
+            if (exportStatus.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = exportStatus.value,
+                    text = exportStatus,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = if (exportStatus.contains("✓")) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
                 )
             }
 
@@ -86,20 +92,19 @@ fun ExportImportScreen(navController: NavHostController) {
 
             // Import section
             Button(
-                onClick = {
-                    importStatus.value = "Import feature coming soon..."
-                },
-                modifier = Modifier.fillMaxWidth()
+                onClick = { viewModel.importData() },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isImporting
             ) {
-                Text("Import Data")
+                Text(if (isImporting) "Importing..." else "Import Data")
             }
 
-            if (importStatus.value.isNotEmpty()) {
+            if (importStatus.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = importStatus.value,
+                    text = importStatus,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = if (importStatus.contains("✓")) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
                 )
             }
 

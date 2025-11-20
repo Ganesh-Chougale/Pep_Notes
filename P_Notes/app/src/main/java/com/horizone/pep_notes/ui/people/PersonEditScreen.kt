@@ -37,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import com.horizone.pep_notes.data.model.Person
 import com.horizone.pep_notes.util.DateFormatter
 import com.horizone.pep_notes.viewmodel.PersonViewModel
 
@@ -53,8 +54,13 @@ fun PersonEditScreen(
 
     LaunchedEffect(personId) {
         if (personId != -1) {
-            // Load person from database
-            // For now, we'll use a placeholder
+            viewModel.selectPerson(Person(id = personId, name = ""))
+        }
+    }
+
+    LaunchedEffect(selectedPerson) {
+        selectedPerson?.let { person ->
+            personName = person.name
         }
     }
 

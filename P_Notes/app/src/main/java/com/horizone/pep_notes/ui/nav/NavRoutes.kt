@@ -2,6 +2,11 @@ package com.horizone.pep_notes.ui.nav
 
 sealed class NavRoutes(val route: String) {
     data object PeopleList : NavRoutes("people_list")
+    
+    data object PersonDetail : NavRoutes("person_detail/{personId}") {
+        fun createRoute(personId: Int) = "person_detail/$personId"
+    }
+    
     data object PersonEdit : NavRoutes("person_edit/{personId}") {
         fun createRoute(personId: Int? = null) =
             if (personId == null) "person_edit/-1" else "person_edit/$personId"
