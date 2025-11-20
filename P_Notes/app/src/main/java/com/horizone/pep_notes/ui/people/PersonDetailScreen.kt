@@ -22,6 +22,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -42,6 +44,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -51,6 +54,7 @@ import com.horizone.pep_notes.ui.nav.NavRoutes
 import com.horizone.pep_notes.util.DateFormatter
 import com.horizone.pep_notes.viewmodel.NoteViewModel
 import com.horizone.pep_notes.viewmodel.PersonViewModel
+import java.time.YearMonth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,6 +74,11 @@ fun PersonDetailScreen(
     var newNoteText by remember { mutableStateOf("") }
     var showFinalDeleteConfirmDialog by remember { mutableStateOf(false) }
     var isDropdownExpanded by remember { mutableStateOf(false) }
+    var selectedMonthYear by remember { mutableStateOf<YearMonth?>(null) }
+    var isMonthYearDropdownExpanded by remember { mutableStateOf(false) }
+    var selectedYear by remember { mutableStateOf(YearMonth.now().year) }
+    var selectedMonth by remember { mutableStateOf(YearMonth.now().monthValue) }
+    var showPersonDetailsDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(personId) {
         if (personId != -1) {
@@ -81,7 +90,7 @@ fun PersonDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(selectedPerson?.name ?: "Person Details") },
+                title = { Text("HOME") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -104,14 +113,15 @@ fun PersonDetailScreen(
                 Column(
                     modifier = Modifier.padding(16.dp)
                 ) {
-                    // 1. Person name (visible at top)
+                    // 1. Person name (clickable to show details)
                     Text(
                         text = person.name,
                         style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.onBackground,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = 8.dp)
+                            .clickable { showPersonDetailsDialog = true }
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -179,12 +189,165 @@ fun PersonDetailScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // 3. Date filter
-                    Text(
-                        text = "Created: ${DateFormatter.formatDate(person.createdAt)}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    // 3. Month/Year filter with custom picker
+                    val personCreatedYearMonth = YearMonth.from(person.createdAt)
+                    val currentYearMonth = YearMonth.now()
+                    
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { isMonthYearDropdownExpanded = !isMonthYearDropdownExpanded },
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = if (selectedMonthYear != null) {
+                                        "Filter: ${selectedMonthYear!!.month.value}/${selectedMonthYear!!.year}"
+                                    } else {
+                                        "All Notes"
+                                    },
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Icon(
+                                    imageVector = if (isMonthYearDropdownExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                    contentDescription = if (isMonthYearDropdownExpanded) "Collapse" else "Expand"
+                                )
+                            }
+
+                            if (isMonthYearDropdownExpanded) {
+                                Spacer(modifier = Modifier.height(12.dp))
+                                
+                                // Clear filter button
+                                if (selectedMonthYear != null) {
+                                    OutlinedButton(
+                                        onClick = {
+                                            selectedMonthYear = null
+                                            isMonthYearDropdownExpanded = false
+                                        },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text("Clear Filter")
+                                    }
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                }
+
+                                // Month and Year dropdowns
+                                var isMonthDropdownExpanded by remember { mutableStateOf(false) }
+                                var isYearDropdownExpanded by remember { mutableStateOf(false) }
+                                
+                                val monthNames = listOf(
+                                    "January", "February", "March", "April", "May", "June",
+                                    "July", "August", "September", "October", "November", "December"
+                                )
+                                
+                                // Generate available years
+                                val availableYears = (personCreatedYearMonth.year..currentYearMonth.year).toList()
+                                
+                                // Generate available months for selected year
+                                val availableMonths = (1..12).filter { month ->
+                                    val isValid = when {
+                                        selectedYear == personCreatedYearMonth.year && month < personCreatedYearMonth.monthValue -> false
+                                        selectedYear == currentYearMonth.year && month > currentYearMonth.monthValue -> false
+                                        else -> true
+                                    }
+                                    isValid
+                                }
+                                
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 8.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    // Month Dropdown
+                                    Column(
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        OutlinedButton(
+                                            onClick = { isMonthDropdownExpanded = !isMonthDropdownExpanded },
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Text(monthNames[selectedMonth - 1])
+                                        }
+                                        
+                                        DropdownMenu(
+                                            expanded = isMonthDropdownExpanded,
+                                            onDismissRequest = { isMonthDropdownExpanded = false },
+                                            modifier = Modifier.fillMaxWidth(0.45f)
+                                        ) {
+                                            availableMonths.forEach { month ->
+                                                DropdownMenuItem(
+                                                    text = { Text(monthNames[month - 1]) },
+                                                    onClick = {
+                                                        selectedMonth = month
+                                                        isMonthDropdownExpanded = false
+                                                    }
+                                                )
+                                            }
+                                        }
+                                    }
+                                    
+                                    // Year Dropdown
+                                    Column(
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        OutlinedButton(
+                                            onClick = { isYearDropdownExpanded = !isYearDropdownExpanded },
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Text(selectedYear.toString())
+                                        }
+                                        
+                                        DropdownMenu(
+                                            expanded = isYearDropdownExpanded,
+                                            onDismissRequest = { isYearDropdownExpanded = false },
+                                            modifier = Modifier.fillMaxWidth(0.45f)
+                                        ) {
+                                            availableYears.forEach { year ->
+                                                DropdownMenuItem(
+                                                    text = { Text(year.toString()) },
+                                                    onClick = {
+                                                        selectedYear = year
+                                                        isYearDropdownExpanded = false
+                                                    }
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                // Apply filter button
+                                val selectedYearMonth = YearMonth.of(selectedYear, selectedMonth)
+                                val isValidSelection = selectedYearMonth >= personCreatedYearMonth && selectedYearMonth <= currentYearMonth
+                                
+                                OutlinedButton(
+                                    onClick = {
+                                        if (isValidSelection) {
+                                            selectedMonthYear = selectedYearMonth
+                                            isMonthYearDropdownExpanded = false
+                                        }
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    enabled = isValidSelection
+                                ) {
+                                    Text("Apply Filter")
+                                }
+                            }
+                        }
+                    }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
@@ -210,10 +373,19 @@ fun PersonDetailScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
+                    // Filter notes by selected month/year
+                    val filteredNotes = if (selectedMonthYear != null) {
+                        notesForPerson.filter { note ->
+                            YearMonth.from(note.createdAt) == selectedMonthYear
+                        }
+                    } else {
+                        notesForPerson
+                    }
+
                     // Notes list in descending order
-                    if (notesForPerson.isEmpty()) {
+                    if (filteredNotes.isEmpty()) {
                         Text(
-                            text = "No notes yet",
+                            text = if (selectedMonthYear != null) "No notes in this month" else "No notes yet",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(16.dp)
@@ -223,7 +395,7 @@ fun PersonDetailScreen(
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            notesForPerson.sortedByDescending { it.createdAt }.forEach { note ->
+                            filteredNotes.sortedByDescending { it.createdAt }.forEach { note ->
                                 NoteCard(note = note)
                             }
                         }
@@ -231,6 +403,15 @@ fun PersonDetailScreen(
                 }
             }
         }
+    }
+
+    // Person details dialog
+    if (showPersonDetailsDialog && selectedPerson != null) {
+        PersonDetailsDialog(
+            person = selectedPerson!!,
+            notesCount = notesForPerson.size,
+            onDismiss = { showPersonDetailsDialog = false }
+        )
     }
 
     // Edit confirmation dialog
@@ -495,6 +676,69 @@ fun FinalDeleteConfirmDialog(
         dismissButton = {
             TextButton(onClick = onDismiss) {
                 Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
+fun PersonDetailsDialog(
+    person: Person,
+    notesCount: Int,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Person Details") },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Person name
+                Column {
+                    Text(
+                        text = "Name",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = person.name,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                // Created at
+                Column {
+                    Text(
+                        text = "Created At",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = DateFormatter.formatDate(person.createdAt),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+
+                // Number of notes
+                Column {
+                    Text(
+                        text = "Number of Notes",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = notesCount.toString(),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Close")
             }
         }
     )
