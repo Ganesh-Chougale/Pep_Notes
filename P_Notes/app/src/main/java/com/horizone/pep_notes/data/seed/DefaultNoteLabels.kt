@@ -8,12 +8,7 @@ import com.horizone.pep_notes.data.model.NoteLabel
  * Users can only add new labels with unique names.
  */
 object DefaultNoteLabels {
-    val defaultLabels = listOf(
-        NoteLabel(id = 1, labelName = "Paid"),
-        NoteLabel(id = 2, labelName = "Unpaid"),
-        NoteLabel(id = 3, labelName = "advance"),
-        NoteLabel(id = 4, labelName = "other"),
-    )
+    val defaultLabels = listOf<NoteLabel>()
 
     /**
      * Get all default label names (used for validation)
@@ -21,7 +16,17 @@ object DefaultNoteLabels {
     fun getDefaultLabelNames(): Set<String> = defaultLabels.map { it.labelName }.toSet()
 
     /**
+     * Get all default color codes (used for validation)
+     */
+    fun getDefaultColorCodes(): Set<String> = defaultLabels.map { it.colorCode }.toSet()
+
+    /**
      * Check if a label name is reserved (default)
      */
     fun isReservedLabelName(name: String): Boolean = getDefaultLabelNames().contains(name)
+
+    /**
+     * Check if a color code is reserved (default)
+     */
+    fun isReservedColorCode(colorCode: String): Boolean = getDefaultColorCodes().contains(colorCode)
 }

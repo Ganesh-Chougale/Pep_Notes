@@ -662,21 +662,130 @@ fun LabelManagementDialog(
                         }
                     }
                 } else {
+                    val allNoteLabels by labelViewModel.noteLabels.collectAsState(initial = emptyList())
+                    var showAddNoteLabelDialog by remember { mutableStateOf(false) }
+                    
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(
-                            text = "Note Labels",
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.padding(bottom = 12.dp)
-                        )
-                        Text(
-                            text = "Coming soon...",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .background(
+                                    color = MaterialTheme.colorScheme.primary,
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .clickable { showAddNoteLabelDialog = true },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Add,
+                                contentDescription = "Add new label",
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        if (allNoteLabels.isEmpty()) {
+                            Text(
+                                text = "No labels yet",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                items(allNoteLabels) { label ->
+                                    var showDeleteConfirm by remember { mutableStateOf(false) }
+                                    
+                                    if (showDeleteConfirm) {
+                                        androidx.compose.material3.AlertDialog(
+                                            onDismissRequest = { showDeleteConfirm = false },
+                                            title = { Text("Delete Label") },
+                                            text = { Text("Are you sure you want to delete \"${label.labelName}\"?") },
+                                            confirmButton = {
+                                                androidx.compose.material3.TextButton(
+                                                    onClick = {
+                                                        labelViewModel.deleteNoteLabel(label)
+                                                        showDeleteConfirm = false
+                                                    }
+                                                ) {
+                                                    Text("Delete")
+                                                }
+                                            },
+                                            dismissButton = {
+                                                androidx.compose.material3.TextButton(
+                                                    onClick = { showDeleteConfirm = false }
+                                                ) {
+                                                    Text("Cancel")
+                                                }
+                                            }
+                                        )
+                                    }
+                                    
+                                    Card(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(bottom = 8.dp),
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                        )
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(12.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(24.dp)
+                                                    .background(
+                                                        color = Color(android.graphics.Color.parseColor(label.colorCode)),
+                                                        shape = RoundedCornerShape(4.dp)
+                                                    )
+                                            )
+                                            Text(
+                                                text = label.labelName,
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                modifier = Modifier.weight(1f)
+                                            )
+                                            
+                                            androidx.compose.material3.IconButton(
+                                                onClick = { showDeleteConfirm = true },
+                                                modifier = Modifier.size(32.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Filled.Delete,
+                                                    contentDescription = "Delete label",
+                                                    tint = MaterialTheme.colorScheme.error,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    if (showAddNoteLabelDialog) {
+                        com.horizone.pep_notes.ui.dialogs.AddNoteLabelDialog(
+                            existingLabels = allNoteLabels,
+                            onDismiss = { showAddNoteLabelDialog = false },
+                            onConfirm = { newLabel ->
+                                labelViewModel.createNoteLabel(newLabel.labelName, newLabel.colorCode)
+                                showAddNoteLabelDialog = false
+                            }
                         )
                     }
                 }

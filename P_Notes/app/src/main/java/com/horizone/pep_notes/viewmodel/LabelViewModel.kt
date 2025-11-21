@@ -80,11 +80,11 @@ class LabelViewModel @Inject constructor(
     }
 
     // Note label operations
-    fun createNoteLabel(labelName: String) {
+    fun createNoteLabel(labelName: String, colorCode: String = "#808080") {
         viewModelScope.launch {
             try {
                 _isLoading.value = true
-                val label = NoteLabel(labelName = labelName)
+                val label = NoteLabel(labelName = labelName, colorCode = colorCode)
                 noteLabelRepository.insertLabel(label)
                 _error.value = null
             } catch (e: Exception) {

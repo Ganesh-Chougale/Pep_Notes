@@ -1,5 +1,6 @@
 package com.horizone.pep_notes.ui.labels
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -7,8 +8,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
@@ -33,10 +36,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.horizone.pep_notes.data.model.NoteLabel
+import com.horizone.pep_notes.ui.dialogs.AddNoteLabelDialog
 import com.horizone.pep_notes.viewmodel.LabelViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -108,9 +113,10 @@ fun NoteLabelsScreen(
 
     if (showAddDialog) {
         AddNoteLabelDialog(
+            existingLabels = labels,
             onDismiss = { showAddDialog = false },
-            onAdd = { name ->
-                viewModel.createNoteLabel(name)
+            onConfirm = { label ->
+                viewModel.createNoteLabel(label.labelName)
                 showAddDialog = false
             }
         )
@@ -135,51 +141,27 @@ fun NoteLabelCard(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = label.labelName,
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.weight(1f)
-            )
+            Row(
+                modifier = Modifier.weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .background(
+                            color = Color(android.graphics.Color.parseColor(label.colorCode)),
+                            shape = RoundedCornerShape(4.dp)
+                        )
+                )
+                Text(
+                    text = label.labelName,
+                    style = MaterialTheme.typography.titleMedium
+                )
+            }
             IconButton(onClick = onDelete) {
                 Icon(Icons.Default.Delete, contentDescription = "Delete")
             }
         }
     }
-}
-
-@Composable
-fun AddNoteLabelDialog(
-    onDismiss: () -> Unit,
-    onAdd: (String) -> Unit
-) {
-    var labelName by remember { mutableStateOf("") }
-
-    androidx.compose.material3.AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Add Label") },
-        text = {
-            TextField(
-                value = labelName,
-                onValueChange = { labelName = it },
-                label = { Text("Label Name") },
-                modifier = Modifier.fillMaxWidth()
-            )
-        },
-        confirmButton = {
-            androidx.compose.material3.TextButton(
-                onClick = {
-                    if (labelName.isNotBlank()) {
-                        onAdd(labelName)
-                    }
-                }
-            ) {
-                Text("Add")
-            }
-        },
-        dismissButton = {
-            androidx.compose.material3.TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        }
-    )
 }

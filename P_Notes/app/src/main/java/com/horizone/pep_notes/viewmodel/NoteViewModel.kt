@@ -61,7 +61,7 @@ class NoteViewModel @Inject constructor(
         }
     }
 
-    fun createNote(personId: Int, title: String, text: String) {
+    fun createNote(personId: Int, title: String, text: String, labelId: Int? = null) {
         viewModelScope.launch {
             try {
                 _isLoading.value = true
@@ -69,6 +69,7 @@ class NoteViewModel @Inject constructor(
                     personId = personId,
                     title = title,
                     text = text,
+                    labelId = labelId,
                     createdAt = LocalDateTime.now(),
                     updatedAt = LocalDateTime.now()
                 )

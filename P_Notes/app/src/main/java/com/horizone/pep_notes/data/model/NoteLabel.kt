@@ -7,5 +7,6 @@ import androidx.room.PrimaryKey
 data class NoteLabel(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-    val labelName: String
+    val labelName: String,
+    val colorCode: String = "#808080" // Default color (gray)
 )

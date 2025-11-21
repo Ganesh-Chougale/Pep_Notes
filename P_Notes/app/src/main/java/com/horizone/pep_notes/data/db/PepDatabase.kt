@@ -12,6 +12,7 @@ import com.horizone.pep_notes.data.model.Person
 import com.horizone.pep_notes.data.model.PersonLabel
 import com.horizone.pep_notes.data.model.PersonLabelCrossRef
 import com.horizone.pep_notes.data.seed.DefaultPersonLabels
+import com.horizone.pep_notes.data.seed.DefaultNoteLabels
 import com.horizone.pep_notes.util.Converters
 
 
@@ -24,7 +25,7 @@ import com.horizone.pep_notes.util.Converters
         NoteLabel::class,
         NoteLabelCrossRef::class
     ],
-    version = 3,
+    version = 5,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -50,6 +51,18 @@ abstract class PepDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE note_labels ADD COLUMN colorCode TEXT NOT NULL DEFAULT '#808080'")
+            }
+        }
+
+        private val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE notes ADD COLUMN labelId INTEGER")
+            }
+        }
+
         fun getDatabase(context: Context): PepDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -57,14 +70,20 @@ abstract class PepDatabase : RoomDatabase() {
                     PepDatabase::class.java,
                     "pep_database"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                     .addCallback(object : RoomDatabase.Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)
-                            // Seed default labels on database creation
+                            // Seed default person labels on database creation
                             DefaultPersonLabels.defaultLabels.forEach { label ->
                                 db.execSQL(
                                     "INSERT INTO person_labels (id, labelName, colorCode) VALUES (${label.id}, '${label.labelName}', '${label.colorCode}')"
+                                )
+                            }
+                            // Seed default note labels on database creation
+                            DefaultNoteLabels.defaultLabels.forEach { label ->
+                                db.execSQL(
+                                    "INSERT INTO note_labels (id, labelName, colorCode) VALUES (${label.id}, '${label.labelName}', '${label.colorCode}')"
                                 )
                             }
                         }

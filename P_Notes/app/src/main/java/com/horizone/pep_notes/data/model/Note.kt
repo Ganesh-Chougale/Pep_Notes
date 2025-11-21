@@ -26,6 +26,7 @@ data class Note(
     val personId: Int,
     val title: String = "",
     val text: String,
+    val labelId: Int? = null, // Optional note label
     val createdAt: LocalDateTime = LocalDateTime.now(),
     val updatedAt: LocalDateTime = LocalDateTime.now()
 )

@@ -44,6 +44,7 @@ fun PersonDetailScreen(
     val selectedPerson by personViewModel.selectedPerson.collectAsState()
     val notesForPerson by noteViewModel.notesForPerson.collectAsState()
     val allPersonLabels by labelViewModel.allPersonLabels.collectAsState(initial = emptyList())
+    val allNoteLabels by labelViewModel.noteLabels.collectAsState(initial = emptyList())
     val personLabels by personViewModel.personLabels.collectAsState(initial = emptyList())
     var editedName by remember { mutableStateOf("") }
     var showEditConfirmDialog by remember { mutableStateOf(false) }
@@ -52,6 +53,8 @@ fun PersonDetailScreen(
     var showAddNoteDialog by remember { mutableStateOf(false) }
     var newNoteTitle by remember { mutableStateOf("") }
     var newNoteText by remember { mutableStateOf("") }
+    var selectedNoteLabelId by remember { mutableStateOf<Int?>(null) }
+    var noteSearchQuery by remember { mutableStateOf("") }
     var showFinalDeleteConfirmDialog by remember { mutableStateOf(false) }
     var editingNote by remember { mutableStateOf<Note?>(null) }
     var editedNoteTitle by remember { mutableStateOf("") }
@@ -191,6 +194,41 @@ fun PersonDetailScreen(
 
                             if (isMonthYearDropdownExpanded) {
                                 Spacer(modifier = Modifier.height(12.dp))
+                                
+                                // Search bar
+                                TextField(
+                                    value = noteSearchQuery,
+                                    onValueChange = { noteSearchQuery = it },
+                                    label = { Text("Search notes...") },
+                                    placeholder = { Text("Title, text, or label") },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = 12.dp),
+                                    singleLine = true,
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = Icons.Default.Search,
+                                            contentDescription = "Search"
+                                        )
+                                    },
+                                    trailingIcon = {
+                                        if (noteSearchQuery.isNotEmpty()) {
+                                            IconButton(
+                                                onClick = { noteSearchQuery = "" },
+                                                modifier = Modifier.size(24.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Clear,
+                                                    contentDescription = "Clear search"
+                                                )
+                                            }
+                                        }
+                                    },
+                                    colors = TextFieldDefaults.colors(
+                                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                                    )
+                                )
                                 
                                 // Clear filter button
                                 if (selectedMonthYear != null) {
@@ -382,19 +420,41 @@ fun PersonDetailScreen(
                         }
                     }
 
-                    // Filter notes by selected month/year
-                    val filteredNotes = if (selectedMonthYear != null) {
-                        notesForPerson.filter { note ->
+                    // Filter notes by selected month/year and search query
+                    val filteredNotes = notesForPerson.filter { note ->
+                        // Month/year filter
+                        val monthYearMatch = if (selectedMonthYear != null) {
                             YearMonth.from(note.createdAt) == selectedMonthYear
+                        } else {
+                            true
                         }
-                    } else {
-                        notesForPerson
+                        
+                        // Search filter (title, text, or label)
+                        val searchMatch = if (noteSearchQuery.isNotBlank()) {
+                            val query = noteSearchQuery.lowercase()
+                            val titleMatch = note.title.lowercase().contains(query)
+                            val textMatch = note.text.lowercase().contains(query)
+                            val labelMatch = if (note.labelId != null) {
+                                allNoteLabels.find { it.id == note.labelId }?.labelName?.lowercase()?.contains(query) ?: false
+                            } else {
+                                false
+                            }
+                            titleMatch || textMatch || labelMatch
+                        } else {
+                            true
+                        }
+                        
+                        monthYearMatch && searchMatch
                     }
 
                     // Notes list with sort order
                     if (filteredNotes.isEmpty()) {
                         Text(
-                            text = if (selectedMonthYear != null) "No notes in this month" else "No notes yet",
+                            text = when {
+                                noteSearchQuery.isNotBlank() -> "No notes match your search"
+                                selectedMonthYear != null -> "No notes in this month"
+                                else -> "No notes yet"
+                            },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(16.dp)
@@ -413,6 +473,7 @@ fun PersonDetailScreen(
                             sortedNotes.forEach { note ->
                                 NoteCard(
                                     note = note,
+                                    allNoteLabels = allNoteLabels,
                                     onEdit = {
                                         editingNote = note
                                         editedNoteTitle = note.title
@@ -532,17 +593,22 @@ fun PersonDetailScreen(
             onNoteTitleChange = { newNoteTitle = it },
             noteText = newNoteText,
             onNoteTextChange = { newNoteText = it },
+            selectedLabelId = selectedNoteLabelId,
+            onLabelChange = { selectedNoteLabelId = it },
+            availableLabels = allNoteLabels,
             onAdd = {
                 if (newNoteText.isNotBlank()) {
-                    noteViewModel.createNote(selectedPerson!!.id, newNoteTitle, newNoteText)
+                    noteViewModel.createNote(selectedPerson!!.id, newNoteTitle, newNoteText, selectedNoteLabelId)
                     newNoteTitle = ""
                     newNoteText = ""
+                    selectedNoteLabelId = null
                     showAddNoteDialog = false
                 }
             },
             onDismiss = {
                 newNoteTitle = ""
                 newNoteText = ""
+                selectedNoteLabelId = null
                 showAddNoteDialog = false
             }
         )
@@ -584,7 +650,7 @@ fun PersonDetailScreen(
 }
 
 @Composable
-fun NoteCard(note: Note, onEdit: () -> Unit = {}, onDelete: () -> Unit = {}) {
+fun NoteCard(note: Note, onEdit: () -> Unit = {}, onDelete: () -> Unit = {}, allNoteLabels: List<com.horizone.pep_notes.data.model.NoteLabel> = emptyList()) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -603,10 +669,18 @@ fun NoteCard(note: Note, onEdit: () -> Unit = {}, onDelete: () -> Unit = {}) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (note.title.isNotEmpty()) {
+                    val labelColor = if (note.labelId != null) {
+                        allNoteLabels.find { it.id == note.labelId }?.colorCode?.let { 
+                            Color(android.graphics.Color.parseColor(it))
+                        } ?: MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    }
+                    
                     Text(
                         text = note.title,
                         style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = labelColor,
                         modifier = Modifier.weight(1f)
                     )
                 } else {
@@ -827,15 +901,21 @@ fun AddNoteDialog(
     onNoteTitleChange: (String) -> Unit,
     noteText: String,
     onNoteTextChange: (String) -> Unit,
+    selectedLabelId: Int? = null,
+    onLabelChange: (Int?) -> Unit = {},
+    availableLabels: List<com.horizone.pep_notes.data.model.NoteLabel> = emptyList(),
     onAdd: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    var isLabelDropdownExpanded by remember { mutableStateOf(false) }
+    
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Add Note") },
         text = {
             Column(
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
                 TextField(
                     value = noteTitle,
@@ -852,6 +932,68 @@ fun AddNoteDialog(
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3
                 )
+                
+                // Label selection
+                Text(
+                    text = "Label (Optional)",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedButton(
+                        onClick = { isLabelDropdownExpanded = !isLabelDropdownExpanded },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        val selectedLabel = availableLabels.find { it.id == selectedLabelId }
+                        Text(
+                            text = selectedLabel?.labelName ?: "Select a label",
+                            modifier = Modifier.weight(1f),
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Start
+                        )
+                    }
+                    
+                    DropdownMenu(
+                        expanded = isLabelDropdownExpanded,
+                        onDismissRequest = { isLabelDropdownExpanded = false },
+                        modifier = Modifier.fillMaxWidth(0.9f)
+                    ) {
+                        // None option
+                        DropdownMenuItem(
+                            text = { Text("None") },
+                            onClick = {
+                                onLabelChange(null)
+                                isLabelDropdownExpanded = false
+                            }
+                        )
+                        
+                        // Available labels
+                        availableLabels.forEach { label ->
+                            DropdownMenuItem(
+                                text = {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(16.dp)
+                                                .background(
+                                                    color = Color(android.graphics.Color.parseColor(label.colorCode)),
+                                                    shape = RoundedCornerShape(3.dp)
+                                                )
+                                        )
+                                        Text(label.labelName)
+                                    }
+                                },
+                                onClick = {
+                                    onLabelChange(label.id)
+                                    isLabelDropdownExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
             }
         },
         confirmButton = {
