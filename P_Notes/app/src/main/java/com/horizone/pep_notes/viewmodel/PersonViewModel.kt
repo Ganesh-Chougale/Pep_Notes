@@ -1,17 +1,15 @@
 package com.horizone.pep_notes.viewmodel
 
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
 import com.horizone.pep_notes.data.model.Person
 import com.horizone.pep_notes.data.model.PersonLabel
 import com.horizone.pep_notes.data.repository.PersonRepository
 import com.horizone.pep_notes.data.repository.PersonLabelRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 import javax.inject.Inject
+
 
 @HiltViewModel
 class PersonViewModel @Inject constructor(

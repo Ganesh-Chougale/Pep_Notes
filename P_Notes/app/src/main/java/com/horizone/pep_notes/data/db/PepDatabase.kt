@@ -1,12 +1,10 @@
 package com.horizone.pep_notes.data.db
 
 import android.content.Context
-import androidx.room.Database
-import androidx.room.Room
-import androidx.room.RoomDatabase
-import androidx.room.TypeConverters
+import androidx.room.*
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+
 import com.horizone.pep_notes.data.model.Note
 import com.horizone.pep_notes.data.model.NoteLabel
 import com.horizone.pep_notes.data.model.NoteLabelCrossRef
@@ -15,6 +13,7 @@ import com.horizone.pep_notes.data.model.PersonLabel
 import com.horizone.pep_notes.data.model.PersonLabelCrossRef
 import com.horizone.pep_notes.data.seed.DefaultPersonLabels
 import com.horizone.pep_notes.util.Converters
+
 
 @Database(
     entities = [
