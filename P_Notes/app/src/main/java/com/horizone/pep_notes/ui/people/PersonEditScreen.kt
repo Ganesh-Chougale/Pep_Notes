@@ -1,6 +1,9 @@
 package com.horizone.pep_notes.ui.people
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -8,13 +11,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -34,11 +43,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.horizone.pep_notes.data.model.Person
 import com.horizone.pep_notes.util.DateFormatter
+import com.horizone.pep_notes.viewmodel.LabelViewModel
 import com.horizone.pep_notes.viewmodel.PersonViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,11 +57,15 @@ import com.horizone.pep_notes.viewmodel.PersonViewModel
 fun PersonEditScreen(
     personId: Int,
     navController: NavHostController,
-    viewModel: PersonViewModel = hiltViewModel()
+    viewModel: PersonViewModel = hiltViewModel(),
+    labelViewModel: LabelViewModel = hiltViewModel()
 ) {
     val selectedPerson by viewModel.selectedPerson.collectAsState()
+    val allPersonLabels by labelViewModel.allPersonLabels.collectAsState(initial = emptyList())
+    val personLabels by viewModel.personLabels.collectAsState(initial = emptyList())
     var personName by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
+    var selectedLabelIds by remember { mutableStateOf(setOf<Int>()) }
 
     LaunchedEffect(personId) {
         if (personId != -1) {
@@ -62,6 +77,16 @@ fun PersonEditScreen(
         selectedPerson?.let { person ->
             personName = person.name
         }
+    }
+
+    LaunchedEffect(personId) {
+        if (personId != -1) {
+            viewModel.loadPersonLabels(personId)
+        }
+    }
+
+    LaunchedEffect(personLabels) {
+        selectedLabelIds = personLabels.map { it.id }.toSet()
     }
 
     Scaffold(
@@ -121,6 +146,53 @@ fun PersonEditScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // Label Selection
+            Text(
+                text = "Assign Labels",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 24.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(allPersonLabels) { label ->
+                    val isSelected = label.id in selectedLabelIds
+                    Card(
+                        modifier = Modifier
+                            .clickable {
+                                selectedLabelIds = if (isSelected) {
+                                    selectedLabelIds - label.id
+                                } else {
+                                    selectedLabelIds + label.id
+                                }
+                            },
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (isSelected) {
+                                Color(android.graphics.Color.parseColor(label.colorCode))
+                            } else {
+                                MaterialTheme.colorScheme.surfaceVariant
+                            }
+                        ),
+                        border = if (isSelected) {
+                            androidx.compose.material3.CardDefaults.outlinedCardBorder()
+                        } else {
+                            null
+                        }
+                    ) {
+                        Text(
+                            text = label.labelName,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                        )
+                    }
+                }
+            }
+
             // Action buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -130,10 +202,10 @@ fun PersonEditScreen(
                     onClick = {
                         if (personName.isNotBlank()) {
                             if (personId == -1) {
-                                viewModel.createPerson(personName)
+                                viewModel.createPersonWithLabels(personName, selectedLabelIds)
                             } else {
                                 selectedPerson?.let { person ->
-                                    viewModel.updatePerson(person.copy(name = personName))
+                                    viewModel.updatePersonWithLabels(person.copy(name = personName), selectedLabelIds)
                                 }
                             }
                             navController.popBackStack()

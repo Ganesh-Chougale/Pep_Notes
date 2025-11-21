@@ -1,64 +1,36 @@
 package com.horizone.pep_notes.ui.people
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.*
+import androidx.compose.foundation.shape.*
+
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavHostController
-import com.horizone.pep_notes.data.model.Note
-import com.horizone.pep_notes.data.model.Person
-import com.horizone.pep_notes.ui.nav.NavRoutes
-import com.horizone.pep_notes.util.DateFormatter
-import com.horizone.pep_notes.viewmodel.NoteViewModel
-import com.horizone.pep_notes.viewmodel.PersonViewModel
-import java.time.YearMonth
+import androidx.compose.material.icons.automirrored.filled.*
+import androidx.compose.material.icons.filled.*
+
+import androidx.compose.material3.*
+
+import androidx.compose.runtime.*
+
+import androidx.compose.ui.*
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.*
+import androidx.compose.ui.text.style.*
+import androidx.compose.ui.unit.*
+
+import androidx.hilt.navigation.compose.*
+
+import androidx.navigation.*
+
+import com.horizone.pep_notes.data.model.*
+import com.horizone.pep_notes.ui.nav.*
+import com.horizone.pep_notes.ui.dialogs.*
+import com.horizone.pep_notes.util.*
+import com.horizone.pep_notes.viewmodel.*
+
+import java.time.*
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,10 +38,13 @@ fun PersonDetailScreen(
     personId: Int,
     navController: NavHostController,
     personViewModel: PersonViewModel = hiltViewModel(),
-    noteViewModel: NoteViewModel = hiltViewModel()
+    noteViewModel: NoteViewModel = hiltViewModel(),
+    labelViewModel: LabelViewModel = hiltViewModel()
 ) {
     val selectedPerson by personViewModel.selectedPerson.collectAsState()
     val notesForPerson by noteViewModel.notesForPerson.collectAsState()
+    val allPersonLabels by labelViewModel.allPersonLabels.collectAsState(initial = emptyList())
+    val personLabels by personViewModel.personLabels.collectAsState(initial = emptyList())
     var editedName by remember { mutableStateOf("") }
     var showEditConfirmDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
@@ -82,7 +57,6 @@ fun PersonDetailScreen(
     var editedNoteTitle by remember { mutableStateOf("") }
     var editedNoteText by remember { mutableStateOf("") }
     var showEditNoteConfirmDialog by remember { mutableStateOf(false) }
-    var isDropdownExpanded by remember { mutableStateOf(false) }
     var selectedMonthYear by remember { mutableStateOf<YearMonth?>(null) }
     var isMonthYearDropdownExpanded by remember { mutableStateOf(false) }
     var selectedYear by remember { mutableStateOf(YearMonth.now().year) }
@@ -97,6 +71,7 @@ fun PersonDetailScreen(
         if (personId != -1) {
             personViewModel.loadPersonById(personId)
             noteViewModel.loadNotesForPerson(personId)
+            personViewModel.loadPersonLabels(personId)
         }
     }
 
@@ -126,83 +101,59 @@ fun PersonDetailScreen(
                 Column(
                     modifier = Modifier.padding(16.dp)
                 ) {
-                    // 1. Person name (clickable to show details)
-                    Text(
-                        text = person.name,
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.primary,
+                    // 1. Person name with Edit/Delete buttons (80% - 10% - 10% ratio)
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 8.dp)
-                            .clickable { showPersonDetailsDialog = true }
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // 2. Dropdown with Edit/Delete buttons
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { isDropdownExpanded = !isDropdownExpanded },
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
+                            .height(48.dp),
+                        horizontalArrangement = Arrangement.spacedBy(0.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column(
+                        // Person name (80% width)
+                        Text(
+                            text = person.name,
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp)
+                                .weight(0.8f)
+                                .clickable { showPersonDetailsDialog = true }
+                        )
+
+                        // Edit button (10% width)
+                        IconButton(
+                            onClick = {
+                                editedName = person.name
+                                showEditConfirmDialog = true
+                            },
+                            modifier = Modifier
+                                .weight(0.1f)
+                                .height(48.dp)
                         ) {
-                            // Dropdown header
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "Actions",
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                                Icon(
-                                    imageVector = if (isDropdownExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                                    contentDescription = if (isDropdownExpanded) "Collapse" else "Expand"
-                                )
-                            }
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Edit",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
 
-                            // Expanded content
-                            if (isDropdownExpanded) {
-                                Spacer(modifier = Modifier.height(12.dp))
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    OutlinedButton(
-                                        onClick = {
-                                            editedName = person.name
-                                            showEditConfirmDialog = true
-                                        },
-                                        modifier = Modifier.weight(1f)
-                                    ) {
-                                        Text("Edit")
-                                    }
-
-                                    OutlinedButton(
-                                        onClick = { showDeleteConfirmDialog = true },
-                                        modifier = Modifier.weight(1f),
-                                        colors = ButtonDefaults.outlinedButtonColors(
-                                            contentColor = MaterialTheme.colorScheme.error
-                                        )
-                                    ) {
-                                        Text("Delete")
-                                    }
-                                }
-                            }
+                        // Delete button (10% width)
+                        IconButton(
+                            onClick = { showDeleteConfirmDialog = true },
+                            modifier = Modifier
+                                .weight(0.1f)
+                                .height(48.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Delete",
+                                tint = MaterialTheme.colorScheme.error
+                            )
                         }
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // 3. Month/Year filter with custom picker
+                    // 2. Month/Year filter with custom picker
                     val personCreatedYearMonth = YearMonth.from(person.createdAt)
                     val currentYearMonth = YearMonth.now()
                     
@@ -492,15 +443,29 @@ fun PersonDetailScreen(
 
     // Edit confirmation dialog
     if (showEditConfirmDialog && selectedPerson != null) {
+        val currentLabelIds = remember(personLabels) { personLabels.map { it.id }.toSet() }
+        var selectedLabelIds by remember(personLabels) { mutableStateOf(currentLabelIds) }
+        
         EditConfirmDialog(
             originalName = selectedPerson!!.name,
             editedName = editedName,
             onEditedNameChange = { editedName = it },
             onConfirm = {
-                personViewModel.updatePerson(selectedPerson!!.copy(name = editedName))
+                // Update person with new name and labels
+                val updatedPerson = if (editedName != selectedPerson!!.name) {
+                    selectedPerson!!.copy(name = editedName)
+                } else {
+                    selectedPerson!!
+                }
+                personViewModel.updatePersonWithLabels(updatedPerson, selectedLabelIds)
                 showEditConfirmDialog = false
             },
-            onDismiss = { showEditConfirmDialog = false }
+            onDismiss = { showEditConfirmDialog = false },
+            allPersonLabels = allPersonLabels,
+            currentPersonLabels = personLabels,
+            onLabelsChange = { labelIds ->
+                selectedLabelIds = labelIds.toSet()
+            }
         )
     }
 
@@ -615,6 +580,7 @@ fun PersonDetailScreen(
             }
         )
     }
+
 }
 
 @Composable
@@ -698,17 +664,29 @@ fun EditConfirmDialog(
     editedName: String,
     onEditedNameChange: (String) -> Unit,
     onConfirm: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    allPersonLabels: List<PersonLabel> = emptyList(),
+    currentPersonLabels: List<PersonLabel> = emptyList(),
+    onLabelsChange: (List<Int>) -> Unit = {}
 ) {
+    var selectedLabelIds by remember { mutableStateOf(currentPersonLabels.map { it.id }.toSet()) }
+    val originalLabelIds = currentPersonLabels.map { it.id }.toSet()
+    
+    // Check if there are any changes (name or labels)
+    val hasNameChanged = editedName.isNotBlank() && editedName != originalName
+    val hasLabelsChanged = selectedLabelIds != originalLabelIds
+    val isApplyEnabled = hasNameChanged || hasLabelsChanged
+    
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Edit Person") },
         text = {
             Column(
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = "Previous name: $originalName",
+                    text = "Current name: $originalName",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -720,17 +698,67 @@ fun EditConfirmDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Labels section
                 Text(
-                    text = "Current name: $editedName",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary
+                    text = "Assign/Remove Labels (Max 2)",
+                    style = MaterialTheme.typography.labelMedium
                 )
+
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    allPersonLabels.forEach { label ->
+                        val isSelected = label.id in selectedLabelIds
+                        val canSelect = isSelected || selectedLabelIds.size < 2
+                        
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable(enabled = canSelect) {
+                                    selectedLabelIds = if (label.id in selectedLabelIds) {
+                                        selectedLabelIds - label.id
+                                    } else {
+                                        selectedLabelIds + label.id
+                                    }
+                                    onLabelsChange(selectedLabelIds.toList())
+                                }
+                                .alpha(if (canSelect) 1f else 0.5f),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .background(
+                                        color = if (isSelected) {
+                                            Color(android.graphics.Color.parseColor(label.colorCode))
+                                        } else {
+                                            Color.Transparent
+                                        },
+                                        shape = RoundedCornerShape(4.dp)
+                                    )
+                                    .border(
+                                        width = 2.dp,
+                                        color = Color(android.graphics.Color.parseColor(label.colorCode)),
+                                        shape = RoundedCornerShape(4.dp)
+                                    )
+                            )
+
+                            Text(
+                                text = label.labelName,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
             }
         },
         confirmButton = {
             TextButton(
                 onClick = onConfirm,
-                enabled = editedName.isNotBlank() && editedName != originalName
+                enabled = isApplyEnabled
             ) {
                 Text("Apply Changes")
             }

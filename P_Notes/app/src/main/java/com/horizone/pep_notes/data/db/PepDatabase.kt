@@ -13,6 +13,7 @@ import com.horizone.pep_notes.data.model.NoteLabelCrossRef
 import com.horizone.pep_notes.data.model.Person
 import com.horizone.pep_notes.data.model.PersonLabel
 import com.horizone.pep_notes.data.model.PersonLabelCrossRef
+import com.horizone.pep_notes.data.seed.DefaultPersonLabels
 import com.horizone.pep_notes.util.Converters
 
 @Database(
@@ -58,6 +59,17 @@ abstract class PepDatabase : RoomDatabase() {
                     "pep_database"
                 )
                     .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                    .addCallback(object : RoomDatabase.Callback() {
+                        override fun onCreate(db: SupportSQLiteDatabase) {
+                            super.onCreate(db)
+                            // Seed default labels on database creation
+                            DefaultPersonLabels.defaultLabels.forEach { label ->
+                                db.execSQL(
+                                    "INSERT INTO person_labels (id, labelName, colorCode) VALUES (${label.id}, '${label.labelName}', '${label.colorCode}')"
+                                )
+                            }
+                        }
+                    })
                     .build()
                 INSTANCE = instance
                 instance

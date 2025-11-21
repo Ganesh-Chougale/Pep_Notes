@@ -35,8 +35,8 @@ class PersonViewModel @Inject constructor(
     val selectedPerson = _selectedPerson.asStateFlow()
 
     // Person labels
-    private val _personLabels = personLabelRepository.getAllLabels()
-    val personLabels = _personLabels
+    private val _personLabels = MutableStateFlow<List<PersonLabel>>(emptyList())
+    val personLabels = _personLabels.asStateFlow()
 
     // Labels for selected person
     private val _labelsForPerson = MutableStateFlow<List<PersonLabel>>(emptyList())
@@ -152,6 +152,71 @@ class PersonViewModel @Inject constructor(
             }
         }
     }
+
+    fun createPersonWithLabels(name: String, labelIds: Set<Int>) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                val person = Person(name = name)
+                val personId = personRepository.insertPerson(person).toInt()
+                
+                // Assign selected labels to the person
+                labelIds.forEach { labelId ->
+                    personRepository.assignLabelToPerson(personId, labelId)
+                }
+                _error.value = null
+            } catch (e: Exception) {
+                _error.value = e.message
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun updatePersonWithLabels(person: Person, labelIds: Set<Int>) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                personRepository.updatePerson(person)
+                _selectedPerson.value = person
+                
+                // Get current labels
+                val currentLabels = _personLabels.value.map { it.id }.toSet()
+                
+                // Remove labels that are no longer selected
+                val labelsToRemove = currentLabels - labelIds
+                labelsToRemove.forEach { labelId ->
+                    personRepository.removeLabelFromPerson(person.id, labelId)
+                }
+                
+                // Add new labels
+                val labelsToAdd = labelIds - currentLabels
+                labelsToAdd.forEach { labelId ->
+                    personRepository.assignLabelToPerson(person.id, labelId)
+                }
+                
+                _error.value = null
+            } catch (e: Exception) {
+                _error.value = e.message
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun loadPersonLabels(personId: Int) {
+        viewModelScope.launch {
+            try {
+                personRepository.getLabelsForPerson(personId).collect { labels ->
+                    _personLabels.value = labels
+                }
+            } catch (e: Exception) {
+                _error.value = e.message
+            }
+        }
+    }
+
+    fun getPersonLabels(personId: Int) = personRepository.getLabelsForPerson(personId)
 
     fun clearError() {
         _error.value = null

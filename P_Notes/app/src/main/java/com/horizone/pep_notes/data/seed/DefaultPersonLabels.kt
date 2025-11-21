@@ -9,14 +9,9 @@ import com.horizone.pep_notes.data.model.PersonLabel
  */
 object DefaultPersonLabels {
     val defaultLabels = listOf(
-        PersonLabel(id = 1, labelName = "Family", colorCode = "#FF6B6B"),      // Red
-        PersonLabel(id = 2, labelName = "Friend", colorCode = "#4ECDC4"),      // Teal
-        PersonLabel(id = 3, labelName = "Colleague", colorCode = "#45B7D1"),   // Blue
-        PersonLabel(id = 4, labelName = "VIP", colorCode = "#FFA07A"),         // Light Salmon
-        PersonLabel(id = 5, labelName = "Important", colorCode = "#FFD93D"),   // Yellow
-        PersonLabel(id = 6, labelName = "Follow Up", colorCode = "#6BCB77"),   // Green
-        PersonLabel(id = 7, labelName = "Mentor", colorCode = "#9D84B7"),      // Purple
-        PersonLabel(id = 8, labelName = "Client", colorCode = "#FF8B94")       // Pink
+        PersonLabel(id = 1, labelName = "Family", colorCode = "#FFD700"),      // Red
+        PersonLabel(id = 2, labelName = "Friend", colorCode = "#C0C0C0"),      // Teal
+        PersonLabel(id = 3, labelName = "Formal", colorCode = "#4ECDC4"),      // Teal
     )
 
     /**

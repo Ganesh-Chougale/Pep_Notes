@@ -1,6 +1,7 @@
 package com.horizone.pep_notes.ui.dialogs
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -43,25 +44,24 @@ fun AddPersonLabelDialog(
     onDismiss: () -> Unit,
     onConfirm: (PersonLabel) -> Unit
 ) {
+    val allColors = listOf(
+        "#8B5CF6", // Purple - neutral, works with light/dark themes
+        "#EC4899", // Pink - vibrant but not too bright
+        "#06B6D4", // Cyan - cool tone, theme-safe
+        "#F59E0B", // Amber - warm tone, accessible
+        "#10B981"  // Emerald - natural green, theme-safe
+    )
+
+    // Get used colors from existing labels and default labels
+    val usedColors = existingLabels.map { it.colorCode }.toSet() + DefaultPersonLabels.getDefaultColorCodes()
+    
+    // Filter to show only available colors
+    val availableColors = allColors.filter { it !in usedColors }
+    
     var labelName by remember { mutableStateOf("") }
-    var selectedColor by remember { mutableStateOf("#FF6B6B") }
+    var selectedColor by remember { mutableStateOf(availableColors.firstOrNull() ?: "#8B5CF6") }
     var showPreview by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
-
-    val availableColors = listOf(
-        "#FF6B6B", // Red
-        "#4ECDC4", // Teal
-        "#45B7D1", // Blue
-        "#FFA07A", // Light Salmon
-        "#FFD93D", // Yellow
-        "#6BCB77", // Green
-        "#9D84B7", // Purple
-        "#FF8B94", // Pink
-        "#A8E6CF", // Mint
-        "#FFD3B6", // Peach
-        "#FFAAA5", // Coral
-        "#FF8B94"  // Rose
-    )
 
     if (showPreview) {
         // Preview and Confirmation Dialog
@@ -234,14 +234,10 @@ fun AddPersonLabelDialog(
                                     .then(
                                         if (selectedColor == color) {
                                             Modifier
-                                                .background(
-                                                    color = Color.Transparent,
-                                                    shape = RoundedCornerShape(8.dp)
-                                                )
-                                                .padding(2.dp)
-                                                .background(
+                                                .border(
+                                                    width = 3.dp,
                                                     color = Color.White,
-                                                    shape = RoundedCornerShape(6.dp)
+                                                    shape = RoundedCornerShape(8.dp)
                                                 )
                                         } else {
                                             Modifier
@@ -252,7 +248,7 @@ fun AddPersonLabelDialog(
                                 if (selectedColor == color) {
                                     Text(
                                         text = "✓",
-                                        color = Color.Black,
+                                        color = Color.White,
                                         style = MaterialTheme.typography.headlineSmall
                                     )
                                 }
