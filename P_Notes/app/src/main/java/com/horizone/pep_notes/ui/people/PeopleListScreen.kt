@@ -184,12 +184,12 @@ fun PersonCard(
                     text = person.name,
                     style = MaterialTheme.typography.titleMedium
                 )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Created: ${DateFormatter.formatDate(person.createdAt)}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                // Spacer(modifier = Modifier.height(4.dp))
+                // Text(
+                //     text = "Created: ${DateFormatter.formatDate(person.createdAt)}",
+                //     style = MaterialTheme.typography.bodySmall,
+                //     color = MaterialTheme.colorScheme.onSurfaceVariant
+                // )
             }
             
             if (personLabels.isNotEmpty()) {

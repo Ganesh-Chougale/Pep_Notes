@@ -59,6 +59,7 @@ fun PersonDetailScreen(
     var editingNote by remember { mutableStateOf<Note?>(null) }
     var editedNoteTitle by remember { mutableStateOf("") }
     var editedNoteText by remember { mutableStateOf("") }
+    var editedNoteLabelId by remember { mutableStateOf<Int?>(null) }
     var showEditNoteConfirmDialog by remember { mutableStateOf(false) }
     var selectedMonthYear by remember { mutableStateOf<YearMonth?>(null) }
     var isMonthYearDropdownExpanded by remember { mutableStateOf(false) }
@@ -478,6 +479,7 @@ fun PersonDetailScreen(
                                         editingNote = note
                                         editedNoteTitle = note.title
                                         editedNoteText = note.text
+                                        editedNoteLabelId = note.labelId
                                         showEditNoteConfirmDialog = true
                                     },
                                     onDelete = {
@@ -568,20 +570,26 @@ fun PersonDetailScreen(
             editedTitle = editedNoteTitle,
             originalText = editingNote!!.text,
             editedText = editedNoteText,
+            originalLabelId = editingNote!!.labelId,
+            editedLabelId = editedNoteLabelId,
             onEditedTitleChange = { editedNoteTitle = it },
             onEditedTextChange = { editedNoteText = it },
+            onEditedLabelChange = { editedNoteLabelId = it },
+            availableLabels = allNoteLabels,
             onConfirm = {
-                noteViewModel.updateNote(editingNote!!.copy(title = editedNoteTitle, text = editedNoteText))
+                noteViewModel.updateNote(editingNote!!.copy(title = editedNoteTitle, text = editedNoteText, labelId = editedNoteLabelId))
                 showEditNoteConfirmDialog = false
                 editingNote = null
                 editedNoteTitle = ""
                 editedNoteText = ""
+                editedNoteLabelId = null
             },
             onDismiss = {
                 showEditNoteConfirmDialog = false
                 editingNote = null
                 editedNoteTitle = ""
                 editedNoteText = ""
+                editedNoteLabelId = null
             }
         )
     }
@@ -1121,11 +1129,16 @@ fun EditNoteConfirmDialog(
     editedTitle: String,
     originalText: String,
     editedText: String,
+    originalLabelId: Int? = null,
+    editedLabelId: Int? = null,
     onEditedTitleChange: (String) -> Unit,
     onEditedTextChange: (String) -> Unit,
+    onEditedLabelChange: (Int?) -> Unit = {},
+    availableLabels: List<com.horizone.pep_notes.data.model.NoteLabel> = emptyList(),
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    var isLabelDropdownExpanded by remember { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Edit Note") },
@@ -1184,6 +1197,68 @@ fun EditNoteConfirmDialog(
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3
                 )
+
+                // Label selection
+                Text(
+                    text = "Label (Optional)",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedButton(
+                        onClick = { isLabelDropdownExpanded = !isLabelDropdownExpanded },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        val selectedLabel = availableLabels.find { it.id == editedLabelId }
+                        Text(
+                            text = selectedLabel?.labelName ?: "Select a label",
+                            modifier = Modifier.weight(1f),
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Start
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = isLabelDropdownExpanded,
+                        onDismissRequest = { isLabelDropdownExpanded = false },
+                        modifier = Modifier.fillMaxWidth(0.9f)
+                    ) {
+                        // None option
+                        DropdownMenuItem(
+                            text = { Text("None") },
+                            onClick = {
+                                onEditedLabelChange(null)
+                                isLabelDropdownExpanded = false
+                            }
+                        )
+
+                        // Available labels
+                        availableLabels.forEach { label ->
+                            DropdownMenuItem(
+                                text = {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(16.dp)
+                                                .background(
+                                                    color = Color(android.graphics.Color.parseColor(label.colorCode)),
+                                                    shape = RoundedCornerShape(3.dp)
+                                                )
+                                        )
+                                        Text(label.labelName)
+                                    }
+                                },
+                                onClick = {
+                                    onEditedLabelChange(label.id)
+                                    isLabelDropdownExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
             }
         },
         confirmButton = {
