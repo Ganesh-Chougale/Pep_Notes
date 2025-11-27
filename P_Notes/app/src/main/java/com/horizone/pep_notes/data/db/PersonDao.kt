@@ -34,4 +34,7 @@ interface PersonDao {
     @Transaction
     @Query("SELECT * FROM persons WHERE id = :id")
     fun getPersonWithLabels(id: Int): Flow<PersonWithLabels?>
+
+    @Query("DELETE FROM persons")
+    suspend fun deleteAllPersons()
 }

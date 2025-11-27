@@ -9,7 +9,11 @@ class Converters {
 
     @TypeConverter
     fun fromLocalDateTime(value: LocalDateTime?): String? {
-        return value?.format(formatter)
+        return try {
+            value?.format(formatter)
+        } catch (e: Exception) {
+            null
+        }
     }
 
     @TypeConverter

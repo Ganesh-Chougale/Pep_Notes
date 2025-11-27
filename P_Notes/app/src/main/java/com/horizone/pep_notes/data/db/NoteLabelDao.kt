@@ -34,4 +34,10 @@ interface NoteLabelDao {
 
     @Query("SELECT nl.* FROM note_labels nl INNER JOIN note_label_cross_ref nlcr ON nl.id = nlcr.labelId WHERE nlcr.noteId = :noteId")
     fun getLabelsForNote(noteId: Int): Flow<List<NoteLabel>>
+
+    @Query("DELETE FROM note_labels")
+    suspend fun deleteAllNoteLabels()
+
+    @Query("DELETE FROM note_label_cross_ref")
+    suspend fun deleteAllNoteLabelCrossRefs()
 }

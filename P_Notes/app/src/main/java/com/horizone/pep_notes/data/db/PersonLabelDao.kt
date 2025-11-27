@@ -34,4 +34,10 @@ interface PersonLabelDao {
 
     @Query("SELECT pl.* FROM person_labels pl INNER JOIN person_label_cross_ref plcr ON pl.id = plcr.labelId WHERE plcr.personId = :personId")
     fun getLabelsForPerson(personId: Int): Flow<List<PersonLabel>>
+
+    @Query("DELETE FROM person_labels")
+    suspend fun deleteAllPersonLabels()
+
+    @Query("DELETE FROM person_label_cross_ref")
+    suspend fun deleteAllPersonLabelCrossRefs()
 }

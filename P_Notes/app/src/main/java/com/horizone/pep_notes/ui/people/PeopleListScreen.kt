@@ -20,6 +20,7 @@ import com.horizone.pep_notes.ui.nav.*
 import com.horizone.pep_notes.ui.dialogs.*
 import com.horizone.pep_notes.util.*
 import com.horizone.pep_notes.viewmodel.*
+import android.os.Process
 
 
 @Composable
@@ -34,6 +35,7 @@ fun PeopleListScreen(
     val allPersonLabels by labelViewModel.allPersonLabels.collectAsState(initial = emptyList())
     var showAddDialog by remember { mutableStateOf(false) }
     var showLabelDialog by remember { mutableStateOf(false) }
+    var showMenuDialog by remember { mutableStateOf(false) }
     var personLabelsMap by remember { mutableStateOf<Map<Int, List<PersonLabel>>>(emptyMap()) }
 
     val displayedPersons = if (searchQuery.isEmpty()) allPersons else searchResults
@@ -86,18 +88,14 @@ fun PeopleListScreen(
                     singleLine = true
                 )
                 
-                // Label button (20% width)
-                androidx.compose.material3.Button(
-                    onClick = { showLabelDialog = true },
+                // Menu button (20% width)
+                androidx.compose.material3.IconButton(
+                    onClick = { showMenuDialog = true },
                     modifier = Modifier
                         .weight(0.2f)
-                        .height(56.dp),
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
+                        .height(56.dp)
                 ) {
-                    Text(
-                        text = "🏷️",
-                        style = MaterialTheme.typography.headlineSmall
-                    )
+                    Icon(Icons.Default.MoreVert, contentDescription = "Menu")
                 }
             }
 
@@ -153,6 +151,18 @@ fun PeopleListScreen(
             allPersonLabels = allPersonLabels,
             labelViewModel = labelViewModel,
             onDismiss = { showLabelDialog = false }
+        )
+    }
+
+    // Menu dialog
+    if (showMenuDialog) {
+        MenuDialog(
+            navController = navController,
+            onDismiss = { showMenuDialog = false },
+            onManageLabels = {
+                showMenuDialog = false
+                showLabelDialog = true
+            }
         )
     }
 }
@@ -811,5 +821,105 @@ fun LabelManagementDialog(
                 showAddPersonLabelDialog = false
             }
         )
+    }
+}
+
+@Composable
+fun MenuDialog(
+    navController: NavHostController,
+    onDismiss: () -> Unit,
+    onManageLabels: () -> Unit
+) {
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Menu",
+                style = MaterialTheme.typography.headlineSmall
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+            ) {
+                // Manage Labels option
+                MenuItem(
+                    label = "Manage Labels",
+                    onClick = onManageLabels
+                )
+
+                // Backup & Restore option
+                MenuItem(
+                    label = "Backup & Restore",
+                    onClick = {
+                        onDismiss()
+                        navController.navigate(NavRoutes.ExportImport.route)
+                    }
+                )
+
+                // About Us option
+                MenuItem(
+                    label = "About Us",
+                    onClick = {
+                        onDismiss()
+                        // TODO: Navigate to About Us screen or show dialog
+                    }
+                )
+
+                // Exit option
+                MenuItem(
+                    label = "Exit",
+                    onClick = {
+                        onDismiss()
+                        // Exit the app
+                        android.os.Process.killProcess(android.os.Process.myPid())
+                    }
+                )
+            }
+        },
+        confirmButton = {
+            androidx.compose.material3.TextButton(
+                onClick = onDismiss
+            ) {
+                Text("Close")
+            }
+        }
+    )
+}
+
+@Composable
+fun MenuItem(
+    label: String,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+            .clickable { onClick() },
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.weight(1f)
+            )
+            Icon(
+                imageVector = Icons.Default.ArrowForward,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
     }
 }
