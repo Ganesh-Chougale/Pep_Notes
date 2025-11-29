@@ -40,4 +40,10 @@ interface PersonLabelDao {
 
     @Query("DELETE FROM person_label_cross_ref")
     suspend fun deleteAllPersonLabelCrossRefs()
+
+    @Query("SELECT * FROM person_labels WHERE labelName = :name AND colorCode = :color LIMIT 1")
+    suspend fun getByNameColor(name: String, color: String): PersonLabel?
+
+    @Query("SELECT * FROM person_labels")
+    suspend fun getAllLabelsOnce(): List<PersonLabel>
 }

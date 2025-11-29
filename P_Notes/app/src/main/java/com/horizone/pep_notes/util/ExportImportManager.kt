@@ -18,6 +18,8 @@ import com.horizone.pep_notes.data.model.NoteLabelCrossRef
 import com.horizone.pep_notes.data.model.Person
 import com.horizone.pep_notes.data.model.PersonLabel
 import com.horizone.pep_notes.data.model.PersonLabelCrossRef
+import com.horizone.pep_notes.util.normalizeColor
+import com.horizone.pep_notes.util.normalizeLabelName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
@@ -48,6 +50,11 @@ enum class IoErrorType {
     FILESYSTEM_UNAVAILABLE,
     INVALID_URI,
     UNKNOWN
+}
+
+enum class ImportMode {
+    Replace,
+    Merge
 }
 
 sealed class FileReadResult {
@@ -127,7 +134,7 @@ class ExportImportManager(private val context: Context, private val database: Pe
         }
     }
 
-    suspend fun importData(jsonString: String): ImportResult = withContext(Dispatchers.IO) {
+    suspend fun importData(jsonString: String, mode: ImportMode = ImportMode.Replace): ImportResult = withContext(Dispatchers.IO) {
         return@withContext try {
             val jsonObject = try {
                 gson.fromJson(jsonString, JsonObject::class.java)
@@ -137,6 +144,56 @@ class ExportImportManager(private val context: Context, private val database: Pe
                     message = "✗ Import failed: Invalid JSON backup file (cannot parse).",
                     errorType = ImportErrorType.PARSE_ERROR
                 )
+            }
+
+            val hasAppId = jsonObject.has("appId")
+            val hasSchemaVersion = jsonObject.has("schemaVersion")
+            if (hasAppId || hasSchemaVersion) {
+                val appIdEl = jsonObject.get("appId")
+                val schemaEl = jsonObject.get("schemaVersion")
+                if (!hasAppId || appIdEl == null || !appIdEl.isJsonPrimitive) {
+                    return@withContext ImportResult(
+                        success = false,
+                        message = "✗ Import failed: Invalid backup metadata (appId).",
+                        errorType = ImportErrorType.VALIDATION_ERROR
+                    )
+                }
+                if (!hasSchemaVersion || schemaEl == null || !schemaEl.isJsonPrimitive || !schemaEl.asJsonPrimitive.isNumber) {
+                    return@withContext ImportResult(
+                        success = false,
+                        message = "✗ Import failed: Invalid backup metadata (schemaVersion).",
+                        errorType = ImportErrorType.VALIDATION_ERROR
+                    )
+                }
+                val appId = appIdEl.asString
+                val schemaVersion = schemaEl.asInt
+                val appIdMatches = appId == context.packageName || appId == APP_ID
+                val schemaInRange = schemaVersion in MIN_SCHEMA_VERSION..MAX_SCHEMA_VERSION
+                if (!appIdMatches || !schemaInRange) {
+                    return@withContext ImportResult(
+                        success = false,
+                        message = "✗ Import failed: Backup is for a different app or unsupported version.",
+                        errorType = ImportErrorType.VALIDATION_ERROR
+                    )
+                }
+            }
+
+            val keysShouldBeArrays = listOf(
+                "persons",
+                "personLabels",
+                "notes",
+                "noteLabels",
+                "personLabelCrossRefs",
+                "noteLabelCrossRefs"
+            )
+            for (k in keysShouldBeArrays) {
+                if (jsonObject.has(k) && !jsonObject.get(k).isJsonArray) {
+                    return@withContext ImportResult(
+                        success = false,
+                        message = "✗ Import failed: Invalid backup structure ($k).",
+                        errorType = ImportErrorType.VALIDATION_ERROR
+                    )
+                }
             }
 
             // Parse arrays (may be null in very old backups)
@@ -159,8 +216,11 @@ class ExportImportManager(private val context: Context, private val database: Pe
             val noteIdMap = mutableMapOf<Int, Int>()
             val noteLabelIdMap = mutableMapOf<Int, Int>()
 
-            val personLabelKeyMap = mutableMapOf<String, Int>()
-            val noteLabelKeyMap = mutableMapOf<String, Int>()
+            data class LabelKey(val name: String, val color: String)
+            val personLabelKeyMap = mutableMapOf<LabelKey, Int>()
+            val noteLabelKeyMap = mutableMapOf<LabelKey, Int>()
+            val canonicalPersonMap = mutableMapOf<LabelKey, Int>()
+            val canonicalNoteMap = mutableMapOf<LabelKey, Int>()
 
             // Counters for reporting
             val totalPersons = personsArray?.size() ?: 0
@@ -178,13 +238,27 @@ class ExportImportManager(private val context: Context, private val database: Pe
             var noteLabelCrossRefsImported = 0
 
             database.withTransaction {
-                
-                noteLabelDao.deleteAllNoteLabelCrossRefs()
-                personLabelDao.deleteAllPersonLabelCrossRefs()
-                noteDao.deleteAllNotes()
-                noteLabelDao.deleteAllNoteLabels()
-                personLabelDao.deleteAllPersonLabels()
-                personDao.deleteAllPersons()
+                if (mode == ImportMode.Replace) {
+                    noteLabelDao.deleteAllNoteLabelCrossRefs()
+                    personLabelDao.deleteAllPersonLabelCrossRefs()
+                    noteDao.deleteAllNotes()
+                    noteLabelDao.deleteAllNoteLabels()
+                    personLabelDao.deleteAllPersonLabels()
+                    personDao.deleteAllPersons()
+                } else {
+                    val existingPersonLabels = personLabelDao.getAllLabelsOnce()
+                    val existingNoteLabels = noteLabelDao.getAllLabelsOnce()
+                    for (pl in existingPersonLabels) {
+                        val n = normalizeLabelName(pl.labelName)
+                        val c = normalizeColor(pl.colorCode, "#FF6B6B")
+                        canonicalPersonMap[LabelKey(n, c)] = pl.id
+                    }
+                    for (nl in existingNoteLabels) {
+                        val n = normalizeLabelName(nl.labelName)
+                        val c = normalizeColor(nl.colorCode, "#808080")
+                        canonicalNoteMap[LabelKey(n, c)] = nl.id
+                    }
+                }
 
                 // Insert persons with new autogenerated IDs
                 if (personsArray != null) {
@@ -241,7 +315,17 @@ class ExportImportManager(private val context: Context, private val database: Pe
                                 "#FF6B6B"
                             }
 
-                            val key = labelName + "|" + colorCode
+                            if (mode == ImportMode.Merge) {
+                                val n = normalizeLabelName(labelName)
+                                val c = normalizeColor(colorCode, "#FF6B6B")
+                                val existingCanonicalId = canonicalPersonMap[LabelKey(n, c)]
+                                if (existingCanonicalId != null) {
+                                    personLabelIdMap[oldId] = existingCanonicalId
+                                    continue
+                                }
+                            }
+
+                            val key = LabelKey(labelName, colorCode)
                             val existingNewId = personLabelKeyMap[key]
                             if (existingNewId != null) {
                                 personLabelIdMap[oldId] = existingNewId
@@ -257,6 +341,11 @@ class ExportImportManager(private val context: Context, private val database: Pe
 
                             personLabelKeyMap[key] = newId
                             personLabelIdMap[oldId] = newId
+                            if (mode == ImportMode.Merge) {
+                                val n = normalizeLabelName(labelName)
+                                val c = normalizeColor(colorCode, "#FF6B6B")
+                                canonicalPersonMap[LabelKey(n, c)] = newId
+                            }
                             personLabelsImported++
                         } catch (_: Exception) {
                             // Skip invalid person label entries
@@ -288,7 +377,17 @@ class ExportImportManager(private val context: Context, private val database: Pe
                                 "#808080"
                             }
 
-                            val key = labelName + "|" + colorCode
+                            if (mode == ImportMode.Merge) {
+                                val n = normalizeLabelName(labelName)
+                                val c = normalizeColor(colorCode, "#808080")
+                                val existingCanonicalId = canonicalNoteMap[LabelKey(n, c)]
+                                if (existingCanonicalId != null) {
+                                    noteLabelIdMap[oldId] = existingCanonicalId
+                                    continue
+                                }
+                            }
+
+                            val key = LabelKey(labelName, colorCode)
                             val existingNewId = noteLabelKeyMap[key]
                             if (existingNewId != null) {
                                 noteLabelIdMap[oldId] = existingNewId
@@ -304,6 +403,11 @@ class ExportImportManager(private val context: Context, private val database: Pe
 
                             noteLabelKeyMap[key] = newId
                             noteLabelIdMap[oldId] = newId
+                            if (mode == ImportMode.Merge) {
+                                val n = normalizeLabelName(labelName)
+                                val c = normalizeColor(colorCode, "#808080")
+                                canonicalNoteMap[LabelKey(n, c)] = newId
+                            }
                             noteLabelsImported++
                         } catch (_: Exception) {
                             // Skip invalid note label entries
@@ -873,9 +977,9 @@ class ExportImportManager(private val context: Context, private val database: Pe
             val noteIdMap = mutableMapOf<Int, Int>()
             val noteLabelIdMap = mutableMapOf<Int, Int>()
 
-            
-            val personLabelKeyMap = mutableMapOf<String, Int>()
-            val noteLabelKeyMap = mutableMapOf<String, Int>()
+            data class LabelKey(val name: String, val color: String)
+            val personLabelKeyMap = mutableMapOf<LabelKey, Int>()
+            val noteLabelKeyMap = mutableMapOf<LabelKey, Int>()
 
             
             var totalPersons = 0
@@ -955,7 +1059,7 @@ class ExportImportManager(private val context: Context, private val database: Pe
                                         "#FF6B6B"
                                     }
 
-                                    val key = labelName + "|" + colorCode
+                                    val key = LabelKey(labelName, colorCode)
                                     val existingNewId = personLabelKeyMap[key]
                                     if (existingNewId != null) {
                                         personLabelIdMap[oldId] = existingNewId
@@ -1040,7 +1144,7 @@ class ExportImportManager(private val context: Context, private val database: Pe
                                         "#808080"
                                     }
 
-                                    val key = labelName + "|" + colorCode
+                                    val key = LabelKey(labelName, colorCode)
                                     val existingNewId = noteLabelKeyMap[key]
                                     if (existingNewId != null) {
                                         noteLabelIdMap[oldId] = existingNewId
@@ -1171,30 +1275,39 @@ class ExportImportManager(private val context: Context, private val database: Pe
         return try {
             val jsonObject = gson.fromJson(jsonString, JsonObject::class.java)
 
-            // Basic structural validation
-            val hasArrays = jsonObject.has("persons") &&
-                    jsonObject.has("personLabels") &&
-                    jsonObject.has("notes") &&
-                    jsonObject.has("noteLabels")
-
-            if (!hasArrays) return false
-
             val hasAppId = jsonObject.has("appId")
             val hasSchemaVersion = jsonObject.has("schemaVersion")
 
-            // If metadata is present, validate it strictly
             if (hasAppId || hasSchemaVersion) {
-                val appId = if (hasAppId) jsonObject.get("appId").asString else return false
-                val schemaVersion = if (hasSchemaVersion) jsonObject.get("schemaVersion").asInt else return false
+                val appIdEl = jsonObject.get("appId")
+                val schemaEl = jsonObject.get("schemaVersion")
+                if (!hasAppId || appIdEl == null || !appIdEl.isJsonPrimitive) return false
+                if (!hasSchemaVersion || schemaEl == null || !schemaEl.isJsonPrimitive || !schemaEl.asJsonPrimitive.isNumber) return false
 
+                val appId = appIdEl.asString
+                val schemaVersion = schemaEl.asInt
                 val appIdMatches = appId == context.packageName || appId == APP_ID
                 val schemaInRange = schemaVersion in MIN_SCHEMA_VERSION..MAX_SCHEMA_VERSION
-
-                appIdMatches && schemaInRange
+                if (!appIdMatches || !schemaInRange) return false
             } else {
-                // Legacy backups without metadata: accept based on structure only
-                true
+                val arrayKeys = listOf("persons", "personLabels", "notes", "noteLabels")
+                val anyArrayPresent = arrayKeys.any { key -> jsonObject.has(key) && jsonObject.get(key).isJsonArray }
+                if (!anyArrayPresent) return false
             }
+
+            val keysShouldBeArrays = listOf(
+                "persons",
+                "personLabels",
+                "notes",
+                "noteLabels",
+                "personLabelCrossRefs",
+                "noteLabelCrossRefs"
+            )
+            for (k in keysShouldBeArrays) {
+                if (jsonObject.has(k) && !jsonObject.get(k).isJsonArray) return false
+            }
+
+            true
         } catch (e: Exception) {
             false
         }
