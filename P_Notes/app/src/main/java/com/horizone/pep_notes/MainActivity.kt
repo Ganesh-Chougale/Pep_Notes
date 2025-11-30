@@ -4,13 +4,18 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.rememberNavController
 import com.horizone.pep_notes.ui.nav.AppNavHost
 import com.horizone.pep_notes.ui.theme.Pep_NotesTheme
+import com.horizone.pep_notes.viewmodel.ThemeViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -19,9 +24,21 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            Pep_NotesTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) {
-                    AppContent()
+            val themeViewModel: ThemeViewModel = hiltViewModel()
+            val isForestDark by themeViewModel.isForestDark.collectAsState()
+
+            val onToggleTheme: () -> Unit = {
+                themeViewModel.toggleTheme()
+            }
+
+            Crossfade(targetState = isForestDark) { dark ->
+                Pep_NotesTheme(darkTheme = dark) {
+                    Scaffold(modifier = Modifier.fillMaxSize()) {
+                        AppContent(
+                            isForestDark = dark,
+                            onToggleTheme = onToggleTheme
+                        )
+                    }
                 }
             }
         }
@@ -29,7 +46,14 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun AppContent() {
+fun AppContent(
+    isForestDark: Boolean,
+    onToggleTheme: () -> Unit
+) {
     val navController = rememberNavController()
-    AppNavHost(navController = navController)
+    AppNavHost(
+        navController = navController,
+        isForestDark = isForestDark,
+        onToggleTheme = onToggleTheme
+    )
 }

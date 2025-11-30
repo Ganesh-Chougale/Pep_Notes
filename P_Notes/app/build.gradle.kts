@@ -55,7 +55,8 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
-    
+    implementation("androidx.compose.animation:animation")
+
     // Navigation
     implementation("androidx.navigation:navigation-compose:2.7.7")
     
@@ -66,6 +67,9 @@ dependencies {
     
     // Lifecycle & ViewModel
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+    
+    // DataStore (preferences) for theme persistence
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
     
     // Hilt for DI
     implementation("com.google.dagger:hilt-android:2.48")

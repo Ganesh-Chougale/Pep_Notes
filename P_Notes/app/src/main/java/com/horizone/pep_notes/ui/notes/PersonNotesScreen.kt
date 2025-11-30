@@ -28,6 +28,7 @@ import com.horizone.pep_notes.viewmodel.PersonViewModel
 fun PersonNotesScreen(
     personId: Int,
     navController: NavHostController,
+    onToggleTheme: () -> Unit,
     noteViewModel: NoteViewModel = hiltViewModel(),
     personViewModel: PersonViewModel = hiltViewModel()
 ) {
@@ -50,6 +51,14 @@ fun PersonNotesScreen(
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onToggleTheme) {
+                        Icon(
+                            imageVector = Icons.Default.Star,
+                            contentDescription = "Toggle theme"
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

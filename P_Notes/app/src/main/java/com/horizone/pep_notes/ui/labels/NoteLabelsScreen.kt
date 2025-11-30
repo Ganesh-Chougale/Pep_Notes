@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -48,6 +49,7 @@ import com.horizone.pep_notes.viewmodel.LabelViewModel
 @Composable
 fun NoteLabelsScreen(
     navController: NavHostController,
+    onToggleTheme: () -> Unit,
     viewModel: LabelViewModel = hiltViewModel()
 ) {
     val labels by viewModel.noteLabels.collectAsState(initial = emptyList())
@@ -60,6 +62,14 @@ fun NoteLabelsScreen(
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onToggleTheme) {
+                        Icon(
+                            imageVector = Icons.Default.Star,
+                            contentDescription = "Toggle theme"
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

@@ -14,13 +14,20 @@ import com.horizone.pep_notes.ui.labels.NoteLabelsScreen
 import com.horizone.pep_notes.ui.export.ExportImportScreen
 
 @Composable
-fun AppNavHost(navController: NavHostController) {
+fun AppNavHost(
+    navController: NavHostController,
+    isForestDark: Boolean,
+    onToggleTheme: () -> Unit
+) {
     NavHost(
         navController = navController,
         startDestination = NavRoutes.PeopleList.route
     ) {
         composable(NavRoutes.PeopleList.route) {
-            PeopleListScreen(navController = navController)
+            PeopleListScreen(
+                navController = navController,
+                onToggleTheme = onToggleTheme
+            )
         }
 
         composable(NavRoutes.PersonDetail.route) { backStackEntry ->
@@ -43,7 +50,8 @@ fun AppNavHost(navController: NavHostController) {
             val personId = backStackEntry.arguments?.getString("personId")?.toIntOrNull() ?: -1
             PersonNotesScreen(
                 personId = personId,
-                navController = navController
+                navController = navController,
+                onToggleTheme = onToggleTheme
             )
         }
 
@@ -51,20 +59,30 @@ fun AppNavHost(navController: NavHostController) {
             val noteId = backStackEntry.arguments?.getString("noteId")?.toIntOrNull() ?: -1
             NoteEditScreen(
                 noteId = noteId,
-                navController = navController
+                navController = navController,
+                onToggleTheme = onToggleTheme
             )
         }
 
         composable(NavRoutes.PersonLabels.route) {
-            PersonLabelsScreen(navController = navController)
+            PersonLabelsScreen(
+                navController = navController,
+                onToggleTheme = onToggleTheme
+            )
         }
 
         composable(NavRoutes.NoteLabels.route) {
-            NoteLabelsScreen(navController = navController)
+            NoteLabelsScreen(
+                navController = navController,
+                onToggleTheme = onToggleTheme
+            )
         }
 
         composable(NavRoutes.ExportImport.route) {
-            ExportImportScreen(navController = navController)
+            ExportImportScreen(
+                navController = navController,
+                onToggleTheme = onToggleTheme
+            )
         }
     }
 }

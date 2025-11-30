@@ -26,6 +26,7 @@ import android.os.Process
 @Composable
 fun PeopleListScreen(
     navController: NavHostController,
+    onToggleTheme: () -> Unit,
     viewModel: PersonViewModel = hiltViewModel(),
     labelViewModel: LabelViewModel = hiltViewModel()
 ) {
@@ -87,12 +88,24 @@ fun PeopleListScreen(
                     ),
                     singleLine = true
                 )
-                
+
+                androidx.compose.material3.IconButton(
+                    onClick = { onToggleTheme() },
+                    modifier = Modifier
+                        .weight(0.1f)
+                        .height(56.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = "Toggle theme"
+                    )
+                }
+
                 // Menu button (20% width)
                 androidx.compose.material3.IconButton(
                     onClick = { showMenuDialog = true },
                     modifier = Modifier
-                        .weight(0.2f)
+                        .weight(0.1f)
                         .height(56.dp)
                 ) {
                     Icon(Icons.Default.MoreVert, contentDescription = "Menu")

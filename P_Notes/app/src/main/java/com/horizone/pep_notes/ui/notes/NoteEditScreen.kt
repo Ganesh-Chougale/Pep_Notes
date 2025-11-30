@@ -14,6 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -47,6 +48,7 @@ import java.time.LocalDateTime
 fun NoteEditScreen(
     noteId: Int,
     navController: NavHostController,
+    onToggleTheme: () -> Unit,
     viewModel: NoteViewModel = hiltViewModel()
 ) {
     val selectedNote by viewModel.selectedNote.collectAsState()
@@ -70,6 +72,12 @@ fun NoteEditScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = onToggleTheme) {
+                        Icon(
+                            imageVector = Icons.Default.Star,
+                            contentDescription = "Toggle theme"
+                        )
+                    }
                     if (noteId != -1) {
                         IconButton(onClick = {
                             selectedNote?.let { note ->

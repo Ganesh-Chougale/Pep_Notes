@@ -20,6 +20,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.AlertDialog
@@ -49,6 +50,7 @@ import com.horizone.pep_notes.viewmodel.ExportImportViewModel
 @Composable
 fun ExportImportScreen(
     navController: NavHostController,
+    onToggleTheme: () -> Unit,
     viewModel: ExportImportViewModel = hiltViewModel()
 ) {
     val exportStatus by viewModel.exportStatus.collectAsState()
@@ -91,6 +93,14 @@ fun ExportImportScreen(
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onToggleTheme) {
+                        Icon(
+                            imageVector = Icons.Default.Star,
+                            contentDescription = "Toggle theme"
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
