@@ -51,36 +51,6 @@ class ExportImportViewModel @Inject constructor(
 
     private var pendingImportUri: Uri? = null
 
-    fun exportData() {
-        viewModelScope.launch {
-            try {
-                _isExporting.value = true
-                _exportProgress.value = "Exporting..."
-                
-                when (val result = exportImportManager.exportToInternalStorageStreaming()) {
-                    is FileWriteResult.Success -> {
-                        _exportStatus.value = "✓ Export successful!"
-                    }
-                    is FileWriteResult.Error -> {
-                        _exportStatus.value = when (result.error) {
-                            IoErrorType.PERMISSION_DENIED -> "✗ Export failed: Permission denied"
-                            IoErrorType.NO_SPACE -> "✗ Export failed: Not enough storage space"
-                            IoErrorType.FILESYSTEM_UNAVAILABLE -> "✗ Export failed: Storage unavailable"
-                            IoErrorType.FILE_NOT_FOUND -> "✗ Export failed: Destination not found"
-                            IoErrorType.WRITE_ERROR, IoErrorType.UNKNOWN -> "✗ Export failed: Failed to save file"
-                            else -> "✗ Export failed: Failed to save file"
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                _exportStatus.value = "✗ Export failed: ${e.message}"
-            } finally {
-                _isExporting.value = false
-                _exportProgress.value = "Done"
-            }
-        }
-    }
-
     fun importData() {
         viewModelScope.launch {
             try {

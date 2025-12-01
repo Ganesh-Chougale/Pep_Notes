@@ -1,6 +1,9 @@
 package com.horizone.pep_notes.ui.nav
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -12,12 +15,17 @@ import com.horizone.pep_notes.ui.notes.NoteEditScreen
 import com.horizone.pep_notes.ui.labels.PersonLabelsScreen
 import com.horizone.pep_notes.ui.labels.NoteLabelsScreen
 import com.horizone.pep_notes.ui.export.ExportImportScreen
+import com.horizone.pep_notes.ui.about.AboutUsScreen
+import com.horizone.pep_notes.ui.theme.AppTheme
+import com.horizone.pep_notes.ui.theme.ThemePickerScreen
+import com.horizone.pep_notes.viewmodel.ThemeState
 
 @Composable
 fun AppNavHost(
     navController: NavHostController,
-    isForestDark: Boolean,
-    onToggleTheme: () -> Unit
+    themeState: ThemeState,
+    onToggleTheme: () -> Unit,
+    onThemeSelected: (AppTheme) -> Unit
 ) {
     NavHost(
         navController = navController,
@@ -26,6 +34,7 @@ fun AppNavHost(
         composable(NavRoutes.PeopleList.route) {
             PeopleListScreen(
                 navController = navController,
+                isDark = themeState.isDark,
                 onToggleTheme = onToggleTheme
             )
         }
@@ -80,9 +89,26 @@ fun AppNavHost(
 
         composable(NavRoutes.ExportImport.route) {
             ExportImportScreen(
-                navController = navController,
-                onToggleTheme = onToggleTheme
+                navController = navController
             )
+        }
+
+        composable(NavRoutes.ThemePicker.route) {
+            ThemePickerScreen(
+                currentTheme = themeState.appTheme,
+                isDark = themeState.isDark,
+                onThemeSelected = { appTheme ->
+                    onThemeSelected(appTheme)
+                    navController.popBackStack()
+                },
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(NavRoutes.About.route) {
+            AboutUsScreen(navController = navController)
         }
     }
 }

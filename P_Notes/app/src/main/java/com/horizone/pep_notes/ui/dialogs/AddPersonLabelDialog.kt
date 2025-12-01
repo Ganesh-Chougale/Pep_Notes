@@ -164,7 +164,8 @@ fun AddPersonLabelDialog(
                 ) {
                     Text("Back")
                 }
-            }
+            },
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
     } else {
         // Main Add Label Dialog
@@ -327,7 +328,8 @@ fun AddPersonLabelDialog(
                 ) {
                     Text("Cancel")
                 }
-            }
+            },
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
     }
 }

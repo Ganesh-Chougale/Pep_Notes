@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.*
 import androidx.compose.ui.unit.*
 import androidx.hilt.navigation.compose.*
@@ -26,6 +27,7 @@ import android.os.Process
 @Composable
 fun PeopleListScreen(
     navController: NavHostController,
+    isDark: Boolean,
     onToggleTheme: () -> Unit,
     viewModel: PersonViewModel = hiltViewModel(),
     labelViewModel: LabelViewModel = hiltViewModel()
@@ -96,8 +98,8 @@ fun PeopleListScreen(
                         .height(56.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Star,
-                        contentDescription = "Toggle theme"
+                        imageVector = if (isDark) Icons.Filled.Brightness4 else Icons.Filled.Brightness7,
+                        contentDescription = if (isDark) "Switch to day theme" else "Switch to night theme"
                     )
                 }
 
@@ -192,7 +194,8 @@ fun PersonCard(
             .clickable { onClick() },
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
             modifier = Modifier
@@ -205,14 +208,9 @@ fun PersonCard(
             ) {
                 Text(
                     text = person.name,
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
-                // Spacer(modifier = Modifier.height(4.dp))
-                // Text(
-                //     text = "Created: ${DateFormatter.formatDate(person.createdAt)}",
-                //     style = MaterialTheme.typography.bodySmall,
-                //     color = MaterialTheme.colorScheme.onSurfaceVariant
-                // )
             }
             
             if (personLabels.isNotEmpty()) {
@@ -222,10 +220,13 @@ fun PersonCard(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     personLabels.forEach { label ->
+                        val backgroundColor = Color(android.graphics.Color.parseColor(label.colorCode))
+                        val isLightColor = backgroundColor.red * 0.299 + backgroundColor.green * 0.587 + backgroundColor.blue * 0.114 > 0.5
+                        
                         Box(
                             modifier = Modifier
                                 .background(
-                                    color = Color(android.graphics.Color.parseColor(label.colorCode)),
+                                    color = backgroundColor,
                                     shape = RoundedCornerShape(4.dp)
                                 )
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
@@ -233,7 +234,7 @@ fun PersonCard(
                             Text(
                                 text = label.labelName,
                                 style = MaterialTheme.typography.labelSmall,
-                                color = Color.White
+                                color = if (isLightColor) Color.Black else Color.White
                             )
                         }
                     }
@@ -632,7 +633,8 @@ fun LabelManagementDialog(
                                             .padding(bottom = 8.dp),
                                         colors = CardDefaults.cardColors(
                                             containerColor = MaterialTheme.colorScheme.surfaceVariant
-                                        )
+                                        ),
+                                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                                     ) {
                                         Row(
                                             modifier = Modifier
@@ -821,7 +823,8 @@ fun LabelManagementDialog(
             ) {
                 Text("Close")
             }
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.surfaceVariant
     )
 
     // Add Person Label Dialog
@@ -860,23 +863,37 @@ fun MenuDialog(
                 // Manage Labels option
                 MenuItem(
                     label = "Manage Labels",
+                    icon = Icons.Filled.Label,
                     onClick = onManageLabels
                 )
 
                 // Backup & Restore option
                 MenuItem(
                     label = "Backup & Restore",
+                    icon = Icons.Filled.Backup,
                     onClick = {
                         onDismiss()
                         navController.navigate(NavRoutes.ExportImport.route)
                     }
                 )
 
+                // Theme option
+                MenuItem(
+                    label = "Theme",
+                    icon = Icons.Filled.Palette,
+                    onClick = {
+                        onDismiss()
+                        navController.navigate(NavRoutes.ThemePicker.route)
+                    }
+                )
+
                 // About Us option
                 MenuItem(
                     label = "About Us",
+                    icon = Icons.Filled.Info,
                     onClick = {
                         onDismiss()
+                        navController.navigate(NavRoutes.About.route)
                         // TODO: Navigate to About Us screen or show dialog
                     }
                 )
@@ -884,6 +901,7 @@ fun MenuDialog(
                 // Exit option
                 MenuItem(
                     label = "Exit",
+                    icon = Icons.Filled.ExitToApp,
                     onClick = {
                         onDismiss()
                         // Exit the app
@@ -905,6 +923,7 @@ fun MenuDialog(
 @Composable
 fun MenuItem(
     label: String,
+    icon: ImageVector,
     onClick: () -> Unit
 ) {
     Card(
@@ -913,8 +932,9 @@ fun MenuItem(
             .padding(vertical = 8.dp)
             .clickable { onClick() },
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Row(
             modifier = Modifier
@@ -922,16 +942,17 @@ fun MenuItem(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(20.dp)
+                    .padding(end = 12.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
             Text(
                 text = label,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.weight(1f)
-            )
-            Icon(
-                imageVector = Icons.Default.ArrowForward,
-                contentDescription = null,
-                modifier = Modifier.size(20.dp),
-                tint = MaterialTheme.colorScheme.primary
+                style = MaterialTheme.typography.bodyMedium
             )
         }
     }

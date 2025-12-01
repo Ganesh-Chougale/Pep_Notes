@@ -141,7 +141,8 @@ fun AddNoteLabelDialog(
                 ) {
                     Text("Back")
                 }
-            }
+            },
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
     } else {
         // Main Add Label Dialog
@@ -304,7 +305,8 @@ fun AddNoteLabelDialog(
                 ) {
                     Text("Cancel")
                 }
-            }
+            },
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
     }
 }

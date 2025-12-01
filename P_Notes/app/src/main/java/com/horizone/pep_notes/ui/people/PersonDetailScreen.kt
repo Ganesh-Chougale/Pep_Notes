@@ -117,7 +117,7 @@ fun PersonDetailScreen(
                         Text(
                             text = person.name,
                             style = MaterialTheme.typography.headlineMedium,
-                            color = MaterialTheme.colorScheme.primary,
+                            color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier
                                 .weight(0.8f)
                                 .clickable { showPersonDetailsDialog = true }
@@ -136,7 +136,7 @@ fun PersonDetailScreen(
                             Icon(
                                 imageVector = Icons.Default.Edit,
                                 contentDescription = "Edit",
-                                tint = MaterialTheme.colorScheme.primary
+                                tint = MaterialTheme.colorScheme.onSurface
                             )
                         }
 
@@ -167,7 +167,8 @@ fun PersonDetailScreen(
                             .clickable { isMonthYearDropdownExpanded = !isMonthYearDropdownExpanded },
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
                     ) {
                         Column(
                             modifier = Modifier
@@ -380,13 +381,13 @@ fun PersonDetailScreen(
                                     Icon(
                                         imageVector = if (noteSortOrder == "descending") Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp,
                                         contentDescription = "Sort order",
-                                        tint = MaterialTheme.colorScheme.primary,
+                                        tint = MaterialTheme.colorScheme.onSurface,
                                         modifier = Modifier.padding(end = 4.dp)
                                     )
                                     Text(
                                         text = if (noteSortOrder == "descending") "Newest" else "Oldest",
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.primary
+                                        color = MaterialTheme.colorScheme.onSurface
                                     )
                                 }
                                 
@@ -663,7 +664,8 @@ fun NoteCard(note: Note, onEdit: () -> Unit = {}, onDelete: () -> Unit = {}, all
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
             modifier = Modifier.padding(12.dp)
@@ -678,13 +680,14 @@ fun NoteCard(note: Note, onEdit: () -> Unit = {}, onDelete: () -> Unit = {}, all
             ) {
                 if (note.title.isNotEmpty()) {
                     val labelColor = if (note.labelId != null) {
-                        allNoteLabels.find { it.id == note.labelId }?.colorCode?.let { 
+                        allNoteLabels.find { it.id == note.labelId }?.colorCode?.let {
                             Color(android.graphics.Color.parseColor(it))
                         } ?: MaterialTheme.colorScheme.primary
                     } else {
-                        MaterialTheme.colorScheme.primary
+                        // When there is no label, use onSurface so the title is always high-contrast
+                        MaterialTheme.colorScheme.onSurface
                     }
-                    
+
                     Text(
                         text = note.title,
                         style = MaterialTheme.typography.titleSmall,
@@ -694,7 +697,7 @@ fun NoteCard(note: Note, onEdit: () -> Unit = {}, onDelete: () -> Unit = {}, all
                 } else {
                     Spacer(modifier = Modifier.weight(1f))
                 }
-                
+
                 IconButton(
                     onClick = onEdit,
                     modifier = Modifier
@@ -704,7 +707,7 @@ fun NoteCard(note: Note, onEdit: () -> Unit = {}, onDelete: () -> Unit = {}, all
                     Icon(
                         imageVector = Icons.Default.Edit,
                         contentDescription = "Edit note",
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
                 

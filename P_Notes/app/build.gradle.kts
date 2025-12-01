@@ -57,6 +57,9 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation("androidx.compose.animation:animation")
 
+    // Material Icons (extended set for sun/moon and menu icons)
+    implementation("androidx.compose.material:material-icons-extended")
+
     // Navigation
     implementation("androidx.navigation:navigation-compose:2.7.7")
     

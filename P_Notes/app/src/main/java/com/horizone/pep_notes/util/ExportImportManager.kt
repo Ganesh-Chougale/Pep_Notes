@@ -114,11 +114,8 @@ class ExportImportManager(private val context: Context, private val database: Pe
             }
 
             // Get cross references
-            val personLabelCrossRefs = mutableListOf<PersonLabelCrossRef>()
-            val noteLabelCrossRefs = mutableListOf<NoteLabelCrossRef>()
-
-            // Query cross references from database (need to add methods to DAOs if not present)
-            // For now, we'll export what we have
+            val personLabelCrossRefs = database.personLabelDao().getAllPersonLabelCrossRefsOnce()
+            val noteLabelCrossRefs = database.noteLabelDao().getAllNoteLabelCrossRefsOnce()
             
             // Convert to JSON
             jsonObject.add("persons", gson.toJsonTree(persons))
@@ -707,6 +704,8 @@ class ExportImportManager(private val context: Context, private val database: Pe
                 val persons = database.personDao().getAllPersons().first()
                 val personLabels = database.personLabelDao().getAllLabels().first()
                 val noteLabels = database.noteLabelDao().getAllLabels().first()
+                val personLabelCrossRefs = database.personLabelDao().getAllPersonLabelCrossRefsOnce()
+                val noteLabelCrossRefs = database.noteLabelDao().getAllNoteLabelCrossRefsOnce()
 
                 jw.name("persons")
                 jw.beginArray()
@@ -741,10 +740,16 @@ class ExportImportManager(private val context: Context, private val database: Pe
 
                 jw.name("personLabelCrossRefs")
                 jw.beginArray()
+                for (cr in personLabelCrossRefs) {
+                    gson.toJson(cr, PersonLabelCrossRef::class.java, jw)
+                }
                 jw.endArray()
 
                 jw.name("noteLabelCrossRefs")
                 jw.beginArray()
+                for (cr in noteLabelCrossRefs) {
+                    gson.toJson(cr, NoteLabelCrossRef::class.java, jw)
+                }
                 jw.endArray()
 
                 jw.endObject()
@@ -801,6 +806,8 @@ class ExportImportManager(private val context: Context, private val database: Pe
                 val persons = database.personDao().getAllPersons().first()
                 val personLabels = database.personLabelDao().getAllLabels().first()
                 val noteLabels = database.noteLabelDao().getAllLabels().first()
+                val personLabelCrossRefs = database.personLabelDao().getAllPersonLabelCrossRefsOnce()
+                val noteLabelCrossRefs = database.noteLabelDao().getAllNoteLabelCrossRefsOnce()
 
                 jw.name("persons")
                 jw.beginArray()
@@ -835,10 +842,16 @@ class ExportImportManager(private val context: Context, private val database: Pe
 
                 jw.name("personLabelCrossRefs")
                 jw.beginArray()
+                for (cr in personLabelCrossRefs) {
+                    gson.toJson(cr, PersonLabelCrossRef::class.java, jw)
+                }
                 jw.endArray()
 
                 jw.name("noteLabelCrossRefs")
                 jw.beginArray()
+                for (cr in noteLabelCrossRefs) {
+                    gson.toJson(cr, NoteLabelCrossRef::class.java, jw)
+                }
                 jw.endArray()
 
                 jw.endObject()

@@ -20,7 +20,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.AlertDialog
@@ -50,7 +49,6 @@ import com.horizone.pep_notes.viewmodel.ExportImportViewModel
 @Composable
 fun ExportImportScreen(
     navController: NavHostController,
-    onToggleTheme: () -> Unit,
     viewModel: ExportImportViewModel = hiltViewModel()
 ) {
     val exportStatus by viewModel.exportStatus.collectAsState()
@@ -95,14 +93,7 @@ fun ExportImportScreen(
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 },
-                actions = {
-                    IconButton(onClick = onToggleTheme) {
-                        Icon(
-                            imageVector = Icons.Default.Star,
-                            contentDescription = "Toggle theme"
-                        )
-                    }
-                },
+                actions = {},
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary
@@ -144,7 +135,6 @@ fun ExportImportScreen(
                 exportStatus = exportStatus,
                 exportProgress = exportProgress,
                 onExportToApps = { viewModel.exportDataToApps() },
-                onExportLocal = { viewModel.exportData() },
                 buttonsEnabled = !(isExporting || isImporting)
             )
 
@@ -175,7 +165,6 @@ private fun ExportSection(
     exportStatus: String,
     exportProgress: String,
     onExportToApps: () -> Unit,
-    onExportLocal: () -> Unit,
     buttonsEnabled: Boolean
 ) {
     Column(
@@ -233,21 +222,7 @@ private fun ExportSection(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Export Local Button
-        Button(
-            onClick = onExportLocal,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp),
-            enabled = buttonsEnabled,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.secondary
-            )
-        ) {
-            Text("Save Locally")
-        }
-
-        if (exportProgress.isNotEmpty()) {
+if (exportProgress.isNotEmpty()) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = exportProgress,
@@ -315,7 +290,7 @@ private fun ImportSection(
                 .height(48.dp),
             enabled = buttonsEnabled,
             colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.tertiary
+                containerColor = MaterialTheme.colorScheme.primary
             )
         ) {
             Icon(
@@ -353,7 +328,7 @@ private fun StatusMessage(message: String, isSuccess: Boolean) {
             .clip(RoundedCornerShape(8.dp))
             .background(
                 if (isSuccess)
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f)
                 else
                     MaterialTheme.colorScheme.error.copy(alpha = 0.1f)
             )
@@ -363,7 +338,7 @@ private fun StatusMessage(message: String, isSuccess: Boolean) {
             text = message,
             style = MaterialTheme.typography.bodySmall,
             color = if (isSuccess)
-                MaterialTheme.colorScheme.primary
+                MaterialTheme.colorScheme.onSurfaceVariant
             else
                 MaterialTheme.colorScheme.error
         )

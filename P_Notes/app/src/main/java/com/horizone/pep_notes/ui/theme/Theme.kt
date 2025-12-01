@@ -31,15 +31,99 @@ private val ForestLightColorScheme = lightColorScheme(
     onSurfaceVariant = ForestOnSurfaceVariantLight
 )
 
+private val OceanDarkColorScheme = darkColorScheme(
+    primary = OceanPrimaryDark,
+    onPrimary = OceanOnPrimaryDark,
+    secondary = OceanSecondaryDark,
+    onSecondary = OceanOnSecondaryDark,
+    background = OceanBackgroundDark,
+    onBackground = OceanOnBackgroundDark,
+    surface = OceanSurfaceDark,
+    onSurface = OceanOnSurfaceDark,
+    surfaceVariant = OceanSurfaceVariantDark,
+    onSurfaceVariant = OceanOnSurfaceVariantDark
+)
+
+private val OceanLightColorScheme = lightColorScheme(
+    primary = OceanPrimaryLight,
+    onPrimary = OceanOnPrimaryLight,
+    secondary = OceanSecondaryLight,
+    onSecondary = OceanOnSecondaryLight,
+    background = OceanBackgroundLight,
+    onBackground = OceanOnBackgroundLight,
+    surface = OceanSurfaceLight,
+    onSurface = OceanOnSurfaceLight,
+    surfaceVariant = OceanSurfaceVariantLight,
+    onSurfaceVariant = OceanOnSurfaceVariantLight
+)
+
+private val DesertDarkColorScheme = darkColorScheme(
+    primary = DesertPrimaryDark,
+    onPrimary = DesertOnPrimaryDark,
+    secondary = DesertSecondaryDark,
+    onSecondary = DesertOnSecondaryDark,
+    background = DesertBackgroundDark,
+    onBackground = DesertOnBackgroundDark,
+    surface = DesertSurfaceDark,
+    onSurface = DesertOnSurfaceDark,
+    surfaceVariant = DesertSurfaceVariantDark,
+    onSurfaceVariant = DesertOnSurfaceVariantDark
+)
+
+private val DesertLightColorScheme = lightColorScheme(
+    primary = DesertPrimaryLight,
+    onPrimary = DesertOnPrimaryLight,
+    secondary = DesertSecondaryLight,
+    onSecondary = DesertOnSecondaryLight,
+    background = DesertBackgroundLight,
+    onBackground = DesertOnBackgroundLight,
+    surface = DesertSurfaceLight,
+    onSurface = DesertOnSurfaceLight,
+    surfaceVariant = DesertSurfaceVariantLight,
+    onSurfaceVariant = DesertOnSurfaceVariantLight
+)
+
+private val GothamDarkColorScheme = darkColorScheme(
+    primary = GothamPrimaryDark,
+    onPrimary = GothamOnPrimaryDark,
+    secondary = GothamSecondaryDark,
+    onSecondary = GothamOnSecondaryDark,
+    background = GothamBackgroundDark,
+    onBackground = GothamOnBackgroundDark,
+    surface = GothamSurfaceDark,
+    onSurface = GothamOnSurfaceDark,
+    surfaceVariant = GothamSurfaceVariantDark,
+    onSurfaceVariant = GothamOnSurfaceVariantDark,
+    outline = GothamOutlineDark,
+    outlineVariant = GothamOutlineVariantDark,
+    onSecondaryContainer = GothamOnSecondaryDark,
+    onTertiary = GothamOnSecondaryDark
+)
+
+private val GothamLightColorScheme = lightColorScheme(
+    primary = GothamPrimaryLight,
+    onPrimary = GothamOnPrimaryLight,
+    secondary = GothamSecondaryLight,
+    onSecondary = GothamOnSecondaryLight,
+    background = GothamBackgroundLight,
+    onBackground = GothamOnBackgroundLight,
+    surface = GothamSurfaceLight,
+    onSurface = GothamOnSurfaceLight,
+    surfaceVariant = GothamSurfaceVariantLight,
+    onSurfaceVariant = GothamOnSurfaceVariantLight
+)
+
 @Composable
 fun Pep_NotesTheme(
+    appTheme: AppTheme,
     darkTheme: Boolean,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = if (darkTheme) {
-        ForestDarkColorScheme
-    } else {
-        ForestLightColorScheme
+    val colorScheme = when (appTheme) {
+        AppTheme.FOREST -> if (darkTheme) ForestDarkColorScheme else ForestLightColorScheme
+        AppTheme.OCEAN -> if (darkTheme) OceanDarkColorScheme else OceanLightColorScheme
+        AppTheme.DESERT -> if (darkTheme) DesertDarkColorScheme else DesertLightColorScheme
+        AppTheme.GOTHAM -> if (darkTheme) GothamDarkColorScheme else GothamLightColorScheme
     }
 
     MaterialTheme(

@@ -41,6 +41,9 @@ interface NoteLabelDao {
     @Query("DELETE FROM note_label_cross_ref")
     suspend fun deleteAllNoteLabelCrossRefs()
 
+    @Query("SELECT * FROM note_label_cross_ref")
+    suspend fun getAllNoteLabelCrossRefsOnce(): List<NoteLabelCrossRef>
+
     @Query("SELECT * FROM note_labels WHERE labelName = :name AND colorCode = :color LIMIT 1")
     suspend fun getByNameColor(name: String, color: String): NoteLabel?
 

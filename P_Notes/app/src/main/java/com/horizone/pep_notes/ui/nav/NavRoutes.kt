@@ -24,4 +24,6 @@ sealed class NavRoutes(val route: String) {
     data object PersonLabels : NavRoutes("person_labels")
     data object NoteLabels : NavRoutes("note_labels")
     data object ExportImport : NavRoutes("export_import")
+    data object ThemePicker : NavRoutes("theme_picker")
+    data object About : NavRoutes("about_us")
 }
