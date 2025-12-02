@@ -1,5 +1,7 @@
 package com.horizone.pep_notes.ui.people
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
@@ -15,7 +17,10 @@ import androidx.compose.runtime.*
 
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.style.*
 import androidx.compose.ui.unit.*
 
@@ -30,6 +35,7 @@ import com.horizone.pep_notes.util.*
 import com.horizone.pep_notes.viewmodel.*
 
 import java.time.*
+import kotlinx.coroutines.delay
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -70,6 +76,7 @@ fun PersonDetailScreen(
     var isNoteSortMenuExpanded by remember { mutableStateOf(false) }
     var noteToDelete by remember { mutableStateOf<Note?>(null) }
     var showDeleteNoteConfirmDialog by remember { mutableStateOf(false) }
+    var showManageNoteLabelsDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(personId) {
         if (personId != -1) {
@@ -595,6 +602,7 @@ fun PersonDetailScreen(
             selectedLabelId = selectedNoteLabelId,
             onLabelChange = { selectedNoteLabelId = it },
             availableLabels = allNoteLabels,
+            onManageLabels = { showManageNoteLabelsDialog = true },
             onAdd = {
                 if (newNoteText.isNotBlank()) {
                     noteViewModel.createNote(selectedPerson!!.id, newNoteTitle, newNoteText, selectedNoteLabelId)
@@ -610,6 +618,15 @@ fun PersonDetailScreen(
                 selectedNoteLabelId = null
                 showAddNoteDialog = false
             }
+        )
+    }
+
+    if (showManageNoteLabelsDialog) {
+        LabelManagementDialog(
+            allPersonLabels = allPersonLabels,
+            labelViewModel = labelViewModel,
+            onDismiss = { showManageNoteLabelsDialog = false },
+            initialTab = 1
         )
     }
 
@@ -905,11 +922,21 @@ fun AddNoteDialog(
     selectedLabelId: Int? = null,
     onLabelChange: (Int?) -> Unit = {},
     availableLabels: List<com.horizone.pep_notes.data.model.NoteLabel> = emptyList(),
+    onManageLabels: () -> Unit = {},
     onAdd: () -> Unit,
     onDismiss: () -> Unit
 ) {
     var isLabelDropdownExpanded by remember { mutableStateOf(false) }
+    var showLabelHint by remember { mutableStateOf(false) }
     val selectedLabel = availableLabels.find { it.id == selectedLabelId }
+
+    LaunchedEffect(Unit) {
+        if (availableLabels.isNotEmpty()) {
+            showLabelHint = true
+            delay(1600)
+            showLabelHint = false
+        }
+    }
     
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -922,17 +949,53 @@ fun AddNoteDialog(
                 Text("Add Note")
                 if (availableLabels.isNotEmpty()) {
                     Box {
-                        IconButton(
-                            onClick = { isLabelDropdownExpanded = !isLabelDropdownExpanded }
+                        val hasSelectedLabel = selectedLabel != null
+                        val golden = Color(0xFFFFD700)
+                        val ringProgress by animateFloatAsState(
+                            targetValue = if (hasSelectedLabel || (showLabelHint && selectedLabel == null)) 1f else 0f,
+                            animationSpec = tween(durationMillis = 600),
+                            label = "noteLabelRing"
+                        )
+
+                        Box(
+                            modifier = (if (showLabelHint && selectedLabel == null) {
+                                Modifier
+                                    .background(
+                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                        shape = CircleShape
+                                    )
+                                    .border(
+                                        width = 1.dp,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        shape = CircleShape
+                                    )
+                            } else {
+                                Modifier
+                            })
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .clickable {
+                                    isLabelDropdownExpanded = !isLabelDropdownExpanded
+                                    showLabelHint = false
+                                }
+                                .drawBehind {
+                                    if (ringProgress > 0f) {
+                                        val strokeWidth = size.minDimension * 0.16f
+                                        val radius = size.minDimension / 2f - strokeWidth / 2f
+                                        drawCircle(
+                                            color = golden,
+                                            radius = radius * ringProgress.coerceIn(0f, 1f),
+                                            style = Stroke(width = strokeWidth),
+                                            alpha = 0.9f
+                                        )
+                                    }
+                                },
+                            contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.Label,
                                 contentDescription = if (selectedLabel != null) "Change label" else "Add label",
-                                tint = if (selectedLabel != null) {
-                                    MaterialTheme.colorScheme.primary
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                }
+                                tint = MaterialTheme.colorScheme.onSurface
                             )
                         }
                         DropdownMenu(
@@ -971,6 +1034,28 @@ fun AddNoteDialog(
                                     }
                                 )
                             }
+
+                            androidx.compose.material3.Divider()
+
+                            DropdownMenuItem(
+                                text = {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Settings,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                        Text("Manage Labels")
+                                    }
+                                },
+                                onClick = {
+                                    isLabelDropdownExpanded = false
+                                    onManageLabels()
+                                }
+                            )
                         }
                     }
                 }
@@ -996,6 +1081,37 @@ fun AddNoteDialog(
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3
                 )
+
+                if (selectedLabel != null) {
+                    Text(
+                        text = "Selected label",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    val backgroundColor = Color(android.graphics.Color.parseColor(selectedLabel.colorCode))
+                    val isLightColor =
+                        backgroundColor.red * 0.299f +
+                                backgroundColor.green * 0.587f +
+                                backgroundColor.blue * 0.114f > 0.5f
+
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                color = backgroundColor,
+                                shape = RoundedCornerShape(16.dp)
+                            )
+                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = selectedLabel.labelName,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (isLightColor) Color.Black else Color.White
+                        )
+                    }
+                }
             }
         },
         confirmButton = {
@@ -1008,7 +1124,7 @@ fun AddNoteDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text("Cancel", color = MaterialTheme.colorScheme.onSurface)
             }
         }
     )
@@ -1132,7 +1248,6 @@ fun EditNoteConfirmDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    var isLabelDropdownExpanded by remember { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Edit Note") },
@@ -1192,63 +1307,49 @@ fun EditNoteConfirmDialog(
                     minLines = 3
                 )
 
-                // Label selection
+                // Label selection (Max 1)
                 Text(
-                    text = "Label (Optional)",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = "Assign/Remove Label (Max 1)",
+                    style = MaterialTheme.typography.labelMedium
                 )
 
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    OutlinedButton(
-                        onClick = { isLabelDropdownExpanded = !isLabelDropdownExpanded },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        val selectedLabel = availableLabels.find { it.id == editedLabelId }
-                        Text(
-                            text = selectedLabel?.labelName ?: "Select a label",
-                            modifier = Modifier.weight(1f),
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Start
-                        )
-                    }
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    availableLabels.forEach { label ->
+                        val isSelected = label.id == editedLabelId
 
-                    DropdownMenu(
-                        expanded = isLabelDropdownExpanded,
-                        onDismissRequest = { isLabelDropdownExpanded = false },
-                        modifier = Modifier.fillMaxWidth(0.9f)
-                    ) {
-                        // None option
-                        DropdownMenuItem(
-                            text = { Text("None") },
-                            onClick = {
-                                onEditedLabelChange(null)
-                                isLabelDropdownExpanded = false
-                            }
-                        )
-
-                        // Available labels
-                        availableLabels.forEach { label ->
-                            DropdownMenuItem(
-                                text = {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(16.dp)
-                                                .background(
-                                                    color = Color(android.graphics.Color.parseColor(label.colorCode)),
-                                                    shape = RoundedCornerShape(3.dp)
-                                                )
-                                        )
-                                        Text(label.labelName)
-                                    }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    val newId = if (isSelected) null else label.id
+                                    onEditedLabelChange(newId)
                                 },
-                                onClick = {
-                                    onEditedLabelChange(label.id)
-                                    isLabelDropdownExpanded = false
-                                }
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .background(
+                                        color = if (isSelected) {
+                                            Color(android.graphics.Color.parseColor(label.colorCode))
+                                        } else {
+                                            Color.Transparent
+                                        },
+                                        shape = RoundedCornerShape(4.dp)
+                                    )
+                                    .border(
+                                        width = 2.dp,
+                                        color = Color(android.graphics.Color.parseColor(label.colorCode)),
+                                        shape = RoundedCornerShape(4.dp)
+                                    )
+                            )
+
+                            Text(
+                                text = label.labelName,
+                                style = MaterialTheme.typography.bodySmall
                             )
                         }
                     }

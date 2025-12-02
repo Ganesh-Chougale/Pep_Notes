@@ -1,5 +1,7 @@
 package com.horizone.pep_notes.ui.people
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
@@ -9,7 +11,10 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.*
 import androidx.compose.ui.unit.*
@@ -19,9 +24,11 @@ import androidx.navigation.*
 import com.horizone.pep_notes.data.model.*
 import com.horizone.pep_notes.ui.nav.*
 import com.horizone.pep_notes.ui.dialogs.*
+import com.horizone.pep_notes.ui.components.LabelChip
 import com.horizone.pep_notes.util.*
 import com.horizone.pep_notes.viewmodel.*
 import android.os.Process
+import kotlinx.coroutines.delay
 
 
 @Composable
@@ -156,7 +163,8 @@ fun PeopleListScreen(
                 viewModel.createPersonWithLabels(name, labelIds)
                 showAddDialog = false
             },
-            allPersonLabels = allPersonLabels
+            allPersonLabels = allPersonLabels,
+            labelViewModel = labelViewModel
         )
     }
 
@@ -248,14 +256,84 @@ fun PersonCard(
 fun AddPersonDialog(
     onDismiss: () -> Unit,
     onAdd: (String, Set<Int>) -> Unit,
-    allPersonLabels: List<PersonLabel> = emptyList()
+    allPersonLabels: List<PersonLabel> = emptyList(),
+    labelViewModel: LabelViewModel
 ) {
     var personName by remember { mutableStateOf("") }
     var selectedLabelIds by remember { mutableStateOf(setOf<Int>()) }
+    var showLabelPicker by remember { mutableStateOf(false) }
+    var showManageLabelsDialog by remember { mutableStateOf(false) }
+    var showLabelHint by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        if (allPersonLabels.isNotEmpty()) {
+            showLabelHint = true
+            delay(1600)
+            showLabelHint = false
+        }
+    }
 
     androidx.compose.material3.AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add Person") },
+        title = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Add Person")
+
+                val hasSelectedLabels = selectedLabelIds.isNotEmpty()
+                val golden = Color(0xFFFFD700)
+                val ringProgress by animateFloatAsState(
+                    targetValue = if (hasSelectedLabels || showLabelHint) 1f else 0f,
+                    animationSpec = tween(durationMillis = 600),
+                    label = "personLabelRing"
+                )
+
+                Box(
+                    modifier = (if (showLabelHint) {
+                        Modifier
+                            .background(
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                shape = CircleShape
+                            )
+                            .border(
+                                width = 1.dp,
+                                color = MaterialTheme.colorScheme.primary,
+                                shape = CircleShape
+                            )
+                    } else {
+                        Modifier
+                    })
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .clickable {
+                            showLabelPicker = true
+                            showLabelHint = false
+                        }
+                        .drawBehind {
+                            if (ringProgress > 0f) {
+                                val strokeWidth = size.minDimension * 0.16f
+                                val radius = size.minDimension / 2f - strokeWidth / 2f
+                                drawCircle(
+                                    color = golden,
+                                    radius = radius * ringProgress.coerceIn(0f, 1f),
+                                    style = Stroke(width = strokeWidth),
+                                    alpha = 0.9f
+                                )
+                            }
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Label,
+                        contentDescription = "Assign labels",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+        },
         text = {
             Column(
                 modifier = Modifier
@@ -273,48 +351,41 @@ fun AddPersonDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Label selection
-                Text(
-                    text = "Assign Labels (Max 2)",
-                    style = MaterialTheme.typography.labelMedium,
-                    modifier = Modifier.padding(bottom = 12.dp)
-                )
+                if (selectedLabelIds.isNotEmpty()) {
+                    Text(
+                        text = "Selected labels",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
 
-                LazyRow(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(allPersonLabels) { label ->
-                        val isSelected = label.id in selectedLabelIds
-                        Card(
-                            modifier = Modifier
-                                .clickable {
-                                    selectedLabelIds = if (isSelected) {
-                                        selectedLabelIds - label.id
-                                    } else if (selectedLabelIds.size < 2) {
-                                        selectedLabelIds + label.id
-                                    } else {
-                                        selectedLabelIds
-                                    }
-                                },
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (isSelected) {
-                                    Color(android.graphics.Color.parseColor(label.colorCode))
-                                } else {
-                                    MaterialTheme.colorScheme.surfaceVariant
-                                }
-                            )
-                        ) {
-                            Text(
-                                text = label.labelName,
-                                style = MaterialTheme.typography.labelMedium,
-                                color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
-                            )
-                        }
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        allPersonLabels
+                            .filter { it.id in selectedLabelIds }
+                            .forEach { label ->
+                                val backgroundColor = Color(android.graphics.Color.parseColor(label.colorCode))
+                                val isLightColor =
+                                    backgroundColor.red * 0.299f +
+                                            backgroundColor.green * 0.587f +
+                                            backgroundColor.blue * 0.114f > 0.5f
+
+                                LabelChip(
+                                    label = label.labelName,
+                                    isSelected = true,
+                                    onRemove = {
+                                        selectedLabelIds = selectedLabelIds - label.id
+                                    },
+                                    selectedContainerColor = backgroundColor,
+                                    selectedContentColor = if (isLightColor) Color.Black else Color.White
+                                )
+                            }
                     }
+
+                    Spacer(modifier = Modifier.height(8.dp))
                 }
             }
         },
@@ -331,19 +402,123 @@ fun AddPersonDialog(
         },
         dismissButton = {
             androidx.compose.material3.TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text("Cancel", color = MaterialTheme.colorScheme.onSurface)
             }
         }
     )
+
+    if (showLabelPicker) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showLabelPicker = false },
+            title = { Text("Select Labels (Max 2)") },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    // Label selection
+                    allPersonLabels.forEach { label ->
+                        val isSelected = label.id in selectedLabelIds
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    selectedLabelIds = if (isSelected) {
+                                        selectedLabelIds - label.id
+                                    } else if (selectedLabelIds.size < 2) {
+                                        selectedLabelIds + label.id
+                                    } else {
+                                        selectedLabelIds
+                                    }
+                                }
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .background(
+                                        color = Color(android.graphics.Color.parseColor(label.colorCode)),
+                                        shape = RoundedCornerShape(4.dp)
+                                    )
+                            )
+                            Text(
+                                text = label.labelName,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(start = 12.dp)
+                            )
+                            if (isSelected) {
+                                Icon(
+                                    imageVector = Icons.Filled.Check,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    androidx.compose.material3.Divider()
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                showLabelPicker = false
+                                showManageLabelsDialog = true
+                            }
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Settings,
+                            contentDescription = "Manage labels",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Manage Labels",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = { showLabelPicker = false }) {
+                    Text("Done")
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { showLabelPicker = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    if (showManageLabelsDialog) {
+        LabelManagementDialog(
+            allPersonLabels = allPersonLabels,
+            labelViewModel = labelViewModel,
+            onDismiss = { showManageLabelsDialog = false },
+            initialTab = 0
+        )
+    }
 }
 
 @Composable
 fun LabelManagementDialog(
     allPersonLabels: List<PersonLabel>,
     labelViewModel: LabelViewModel,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    initialTab: Int = 0
 ) {
-    var selectedTab by remember { mutableStateOf(0) }
+    var selectedTab by remember { mutableStateOf(initialTab) }
     var showAddPersonLabelDialog by remember { mutableStateOf(false) }
     
     androidx.compose.material3.AlertDialog(
@@ -453,6 +628,26 @@ fun LabelManagementDialog(
                                 items(allPersonLabels) { label ->
                                     var showDeleteConfirm by remember { mutableStateOf(false) }
                                     var showEditConfirm by remember { mutableStateOf(false) }
+                                    var showDefaultInfo by remember { mutableStateOf(false) }
+
+                                    val isDefaultLabel =
+                                        com.horizone.pep_notes.data.seed.DefaultPersonLabels.isReservedLabelName(label.labelName) &&
+                                                com.horizone.pep_notes.data.seed.DefaultPersonLabels.isReservedColorCode(label.colorCode)
+
+                                    if (showDefaultInfo) {
+                                        androidx.compose.material3.AlertDialog(
+                                            onDismissRequest = { showDefaultInfo = false },
+                                            title = { Text("Default Label") },
+                                            text = { Text("Built-in labels cannot be edited or deleted.") },
+                                            confirmButton = {
+                                                androidx.compose.material3.TextButton(
+                                                    onClick = { showDefaultInfo = false }
+                                                ) {
+                                                    Text("OK")
+                                                }
+                                            }
+                                        )
+                                    }
                                     
                                     if (showDeleteConfirm) {
                                         androidx.compose.material3.AlertDialog(
@@ -658,7 +853,13 @@ fun LabelManagementDialog(
                                             )
                                             
                                             androidx.compose.material3.IconButton(
-                                                onClick = { showEditConfirm = true },
+                                                onClick = {
+                                                    if (isDefaultLabel) {
+                                        showDefaultInfo = true
+                                    } else {
+                                        showEditConfirm = true
+                                    }
+                                                },
                                                 modifier = Modifier.size(32.dp)
                                             ) {
                                                 Icon(
@@ -670,7 +871,13 @@ fun LabelManagementDialog(
                                             }
                                             
                                             androidx.compose.material3.IconButton(
-                                                onClick = { showDeleteConfirm = true },
+                                                onClick = {
+                                                    if (isDefaultLabel) {
+                                        showDefaultInfo = true
+                                    } else {
+                                        showDeleteConfirm = true
+                                    }
+                                                },
                                                 modifier = Modifier.size(32.dp)
                                             ) {
                                                 Icon(
@@ -731,6 +938,25 @@ fun LabelManagementDialog(
                                 items(allNoteLabels) { label ->
                                     var showDeleteConfirm by remember { mutableStateOf(false) }
                                     var showEditConfirm by remember { mutableStateOf(false) }
+                                    var showDefaultInfo by remember { mutableStateOf(false) }
+
+                                    val isDefaultLabel =
+                                        com.horizone.pep_notes.data.seed.DefaultNoteLabels.isReservedLabelName(label.labelName)
+
+                                    if (showDefaultInfo) {
+                                        androidx.compose.material3.AlertDialog(
+                                            onDismissRequest = { showDefaultInfo = false },
+                                            title = { Text("Default Label") },
+                                            text = { Text("Built-in labels cannot be edited or deleted.") },
+                                            confirmButton = {
+                                                androidx.compose.material3.TextButton(
+                                                    onClick = { showDefaultInfo = false }
+                                                ) {
+                                                    Text("OK")
+                                                }
+                                            }
+                                        )
+                                    }
 
                                     if (showDeleteConfirm) {
                                         androidx.compose.material3.AlertDialog(
@@ -936,7 +1162,13 @@ fun LabelManagementDialog(
                                             )
 
                                             androidx.compose.material3.IconButton(
-                                                onClick = { showEditConfirm = true },
+                                                onClick = {
+                                                    if (isDefaultLabel) {
+                                                        showDefaultInfo = true
+                                                    } else {
+                                                        showEditConfirm = true
+                                                    }
+                                                },
                                                 modifier = Modifier.size(32.dp)
                                             ) {
                                                 Icon(
@@ -948,7 +1180,13 @@ fun LabelManagementDialog(
                                             }
 
                                             androidx.compose.material3.IconButton(
-                                                onClick = { showDeleteConfirm = true },
+                                                onClick = {
+                                                    if (isDefaultLabel) {
+                                                        showDefaultInfo = true
+                                                    } else {
+                                                        showDeleteConfirm = true
+                                                    }
+                                                },
                                                 modifier = Modifier.size(32.dp)
                                             ) {
                                                 Icon(
