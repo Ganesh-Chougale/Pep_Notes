@@ -432,7 +432,7 @@ fun LabelManagementDialog(
                                 imageVector = Icons.Filled.Add,
                                 contentDescription = "Add new label",
                                 tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(28.dp)
                             )
                         }
                         
@@ -730,7 +730,8 @@ fun LabelManagementDialog(
                             ) {
                                 items(allNoteLabels) { label ->
                                     var showDeleteConfirm by remember { mutableStateOf(false) }
-                                    
+                                    var showEditConfirm by remember { mutableStateOf(false) }
+
                                     if (showDeleteConfirm) {
                                         androidx.compose.material3.AlertDialog(
                                             onDismissRequest = { showDeleteConfirm = false },
@@ -755,7 +756,156 @@ fun LabelManagementDialog(
                                             }
                                         )
                                     }
-                                    
+
+                                    if (showEditConfirm) {
+                                        var editedName by remember { mutableStateOf(label.labelName) }
+                                        var editedColor by remember { mutableStateOf(label.colorCode) }
+                                        var editErrorMessage by remember { mutableStateOf("") }
+
+                                        val allColors = listOf(
+                                            "#2196F3", // Blue
+                                            "#F44336", // Red
+                                            "#FFC107", // Yellow
+                                            "#4CAF50", // Green
+                                            "#FF9800", // Orange
+                                            "#9C27B0"  // Purple
+                                        )
+
+                                        val usedColors = (allNoteLabels.filter { it.id != label.id }.map { it.colorCode }.toSet() +
+                                                com.horizone.pep_notes.data.seed.DefaultNoteLabels.getDefaultColorCodes())
+                                        val availableColors = allColors.filter { it !in usedColors }
+
+                                        androidx.compose.material3.AlertDialog(
+                                            onDismissRequest = { showEditConfirm = false },
+                                            title = { Text("Edit Label") },
+                                            text = {
+                                                Column(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(16.dp)
+                                                ) {
+                                                    Text(
+                                                        text = "Label Name",
+                                                        style = MaterialTheme.typography.labelMedium,
+                                                        modifier = Modifier.padding(bottom = 8.dp)
+                                                    )
+                                                    TextField(
+                                                        value = editedName,
+                                                        onValueChange = {
+                                                            editedName = it
+                                                            editErrorMessage = ""
+                                                        },
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .padding(bottom = 16.dp),
+                                                        placeholder = { Text("Enter label name") },
+                                                        colors = TextFieldDefaults.colors(
+                                                            focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                                            unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                                                        ),
+                                                        singleLine = true
+                                                    )
+
+                                                    Text(
+                                                        text = "Select Color",
+                                                        style = MaterialTheme.typography.labelMedium,
+                                                        modifier = Modifier.padding(bottom = 12.dp)
+                                                    )
+
+                                                    Row(
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .padding(bottom = 16.dp),
+                                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                                    ) {
+                                                        availableColors.forEach { color ->
+                                                            Box(
+                                                                modifier = Modifier
+                                                                    .size(40.dp)
+                                                                    .background(
+                                                                        color = Color(android.graphics.Color.parseColor(color)),
+                                                                        shape = RoundedCornerShape(8.dp)
+                                                                    )
+                                                                    .clickable { editedColor = color }
+                                                                    .then(
+                                                                        if (editedColor == color) {
+                                                                            Modifier
+                                                                                .background(
+                                                                                    color = Color.Transparent,
+                                                                                    shape = RoundedCornerShape(8.dp)
+                                                                                )
+                                                                                .padding(2.dp)
+                                                                                .background(
+                                                                                    color = Color.White,
+                                                                                    shape = RoundedCornerShape(6.dp)
+                                                                                )
+                                                                        } else {
+                                                                            Modifier
+                                                                        }
+                                                                    ),
+                                                                contentAlignment = Alignment.Center
+                                                            ) {
+                                                                if (editedColor == color) {
+                                                                    Text(
+                                                                        text = "✓",
+                                                                        color = Color.Black,
+                                                                        style = MaterialTheme.typography.headlineSmall
+                                                                    )
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+
+                                                    if (editErrorMessage.isNotEmpty()) {
+                                                        Text(
+                                                            text = editErrorMessage,
+                                                            color = MaterialTheme.colorScheme.error,
+                                                            style = MaterialTheme.typography.bodySmall,
+                                                            modifier = Modifier.padding(bottom = 12.dp)
+                                                        )
+                                                    }
+                                                }
+                                            },
+                                            confirmButton = {
+                                                androidx.compose.material3.TextButton(
+                                                    onClick = {
+                                                        when {
+                                                            editedName.isBlank() -> {
+                                                                editErrorMessage = "Label name cannot be empty"
+                                                            }
+                                                            com.horizone.pep_notes.data.seed.DefaultNoteLabels.isReservedLabelName(editedName) && editedName != label.labelName -> {
+                                                                editErrorMessage = "This label name is reserved"
+                                                            }
+                                                            allNoteLabels.any { it.labelName.equals(editedName, ignoreCase = true) && it.id != label.id } -> {
+                                                                editErrorMessage = "Label name already exists"
+                                                            }
+                                                            com.horizone.pep_notes.data.seed.DefaultNoteLabels.isReservedColorCode(editedColor) && editedColor != label.colorCode -> {
+                                                                editErrorMessage = "This color is reserved"
+                                                            }
+                                                            allNoteLabels.any { it.colorCode == editedColor && it.id != label.id } -> {
+                                                                editErrorMessage = "Color already used"
+                                                            }
+                                                            else -> {
+                                                                val updatedLabel = label.copy(labelName = editedName, colorCode = editedColor)
+                                                                labelViewModel.updateNoteLabel(updatedLabel)
+                                                                showEditConfirm = false
+                                                            }
+                                                        }
+                                                    }
+                                                ) {
+                                                    Text("Save")
+                                                }
+                                            },
+                                            dismissButton = {
+                                                androidx.compose.material3.TextButton(
+                                                    onClick = { showEditConfirm = false }
+                                                ) {
+                                                    Text("Cancel")
+                                                }
+                                            }
+                                        )
+                                    }
+
                                     Card(
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -784,7 +934,19 @@ fun LabelManagementDialog(
                                                 style = MaterialTheme.typography.bodyMedium,
                                                 modifier = Modifier.weight(1f)
                                             )
-                                            
+
+                                            androidx.compose.material3.IconButton(
+                                                onClick = { showEditConfirm = true },
+                                                modifier = Modifier.size(32.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Filled.Edit,
+                                                    contentDescription = "Edit label",
+                                                    tint = MaterialTheme.colorScheme.primary,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            }
+
                                             androidx.compose.material3.IconButton(
                                                 onClick = { showDeleteConfirm = true },
                                                 modifier = Modifier.size(32.dp)
@@ -946,9 +1108,9 @@ fun MenuItem(
                 imageVector = icon,
                 contentDescription = null,
                 modifier = Modifier
-                    .size(20.dp)
+                    .size(32.dp)
                     .padding(end = 12.dp),
-                tint = MaterialTheme.colorScheme.primary
+                tint = MaterialTheme.colorScheme.onSurface
             )
             Text(
                 text = label,

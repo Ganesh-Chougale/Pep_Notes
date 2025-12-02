@@ -69,7 +69,7 @@ fun AddPersonLabelDialog(
             onDismissRequest = { showPreview = false },
             title = {
                 Text(
-                    text = "Confirm Label",
+                    text = "Person Confirm Label",
                     style = MaterialTheme.typography.headlineSmall,
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center
@@ -82,13 +82,6 @@ fun AddPersonLabelDialog(
                         .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = "Label Preview",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
-
                     // Label Preview
                     Box(
                         modifier = Modifier
@@ -162,7 +155,7 @@ fun AddPersonLabelDialog(
                     onClick = { showPreview = false },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Back")
+                    Text("Cancel")
                 }
             },
             containerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -171,20 +164,39 @@ fun AddPersonLabelDialog(
         // Main Add Label Dialog
         AlertDialog(
             onDismissRequest = onDismiss,
-            title = {
-                Text(
-                    text = "Add Person Label",
-                    style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center
-                )
-            },
+            title = null,
             text = {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp)
                 ) {
+                    // Person label heading and preview
+                    Text(
+                        text = "Person Label Name",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp)
+                            .background(
+                                color = if (labelName.isNotEmpty()) Color(android.graphics.Color.parseColor(selectedColor)) else MaterialTheme.colorScheme.surfaceVariant,
+                                shape = RoundedCornerShape(8.dp)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = labelName.ifEmpty { "Label Preview" },
+                            style = MaterialTheme.typography.labelLarge,
+                            color = if (labelName.isNotEmpty()) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
                     // Label Name Input
                     Text(
                         text = "Label Name",
@@ -266,29 +278,6 @@ fun AddPersonLabelDialog(
                             modifier = Modifier.padding(bottom = 12.dp)
                         )
                     }
-
-                    // Preview
-                    Text(
-                        text = "Preview",
-                        style = MaterialTheme.typography.labelMedium,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp)
-                            .background(
-                                color = if (labelName.isNotEmpty()) Color(android.graphics.Color.parseColor(selectedColor)) else MaterialTheme.colorScheme.surfaceVariant,
-                                shape = RoundedCornerShape(8.dp)
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = labelName.ifEmpty { "Label Preview" },
-                            style = MaterialTheme.typography.labelLarge,
-                            color = if (labelName.isNotEmpty()) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
                 }
             },
             confirmButton = {
@@ -318,7 +307,7 @@ fun AddPersonLabelDialog(
                     modifier = Modifier.fillMaxWidth(),
                     enabled = labelName.isNotBlank()
                 ) {
-                    Text("Preview")
+                    Text("Confirm Label")
                 }
             },
             dismissButton = {

@@ -46,7 +46,7 @@ fun AddNoteLabelDialog(
             onDismissRequest = { showPreview = false },
             title = {
                 Text(
-                    text = "Confirm Label",
+                    text = "Note Confirm Label",
                     style = MaterialTheme.typography.headlineSmall,
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center
@@ -59,13 +59,6 @@ fun AddNoteLabelDialog(
                         .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = "Label Preview",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
-
                     // Label Preview
                     Box(
                         modifier = Modifier
@@ -139,7 +132,7 @@ fun AddNoteLabelDialog(
                     onClick = { showPreview = false },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Back")
+                    Text("Cancel")
                 }
             },
             containerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -148,20 +141,39 @@ fun AddNoteLabelDialog(
         // Main Add Label Dialog
         AlertDialog(
             onDismissRequest = onDismiss,
-            title = {
-                Text(
-                    text = "Add Note Label",
-                    style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center
-                )
-            },
+            title = null,
             text = {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp)
                 ) {
+                    Text(
+                        text = "Note Label Name",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+
+                    // Preview
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp)
+                            .background(
+                                color = if (labelName.isNotEmpty()) Color(android.graphics.Color.parseColor(selectedColor)) else MaterialTheme.colorScheme.surfaceVariant,
+                                shape = RoundedCornerShape(8.dp)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = labelName.ifEmpty { "Label Preview" },
+                            style = MaterialTheme.typography.labelLarge,
+                            color = if (labelName.isNotEmpty()) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
                     // Label Name Input
                     Text(
                         text = "Label Name",
@@ -243,29 +255,6 @@ fun AddNoteLabelDialog(
                             modifier = Modifier.padding(bottom = 12.dp)
                         )
                     }
-
-                    // Preview
-                    Text(
-                        text = "Preview",
-                        style = MaterialTheme.typography.labelMedium,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp)
-                            .background(
-                                color = if (labelName.isNotEmpty()) Color(android.graphics.Color.parseColor(selectedColor)) else MaterialTheme.colorScheme.surfaceVariant,
-                                shape = RoundedCornerShape(8.dp)
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = labelName.ifEmpty { "Label Preview" },
-                            style = MaterialTheme.typography.labelLarge,
-                            color = if (labelName.isNotEmpty()) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
                 }
             },
             confirmButton = {
@@ -295,7 +284,7 @@ fun AddNoteLabelDialog(
                     modifier = Modifier.fillMaxWidth(),
                     enabled = labelName.isNotBlank()
                 ) {
-                    Text("Preview")
+                    Text("Confirm Label")
                 }
             },
             dismissButton = {

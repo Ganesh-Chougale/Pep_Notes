@@ -355,7 +355,7 @@ fun PersonDetailScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // 4. Notes section with filter and add button - all in one row
+                    // 4. Notes section header with sorter and add button
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -363,62 +363,52 @@ fun PersonDetailScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "${person.name} Notes",
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            // Sort filter for notes
-                            Box {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.clickable { isNoteSortMenuExpanded = !isNoteSortMenuExpanded }
-                                ) {
-                                    Icon(
-                                        imageVector = if (noteSortOrder == "descending") Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp,
-                                        contentDescription = "Sort order",
-                                        tint = MaterialTheme.colorScheme.onSurface,
-                                        modifier = Modifier.padding(end = 4.dp)
-                                    )
-                                    Text(
-                                        text = if (noteSortOrder == "descending") "Newest" else "Oldest",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                }
-                                
-                                DropdownMenu(
-                                    expanded = isNoteSortMenuExpanded,
-                                    onDismissRequest = { isNoteSortMenuExpanded = false }
-                                ) {
-                                    DropdownMenuItem(
-                                        text = { Text("Newest First (Descending)") },
-                                        onClick = {
-                                            noteSortOrder = "descending"
-                                            isNoteSortMenuExpanded = false
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text("Oldest First (Ascending)") },
-                                        onClick = {
-                                            noteSortOrder = "ascending"
-                                            isNoteSortMenuExpanded = false
-                                        }
-                                    )
-                                }
+                        // Sort filter for notes (left side)
+                        Box {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.clickable { isNoteSortMenuExpanded = !isNoteSortMenuExpanded }
+                            ) {
+                                Icon(
+                                    imageVector = if (noteSortOrder == "descending") Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp,
+                                    contentDescription = "Sort order",
+                                    tint = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.padding(end = 4.dp)
+                                )
+                                Text(
+                                    text = if (noteSortOrder == "descending") "Newest" else "Oldest",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
                             }
                             
-                            // Add note button
-                            Button(
-                                onClick = { showAddNoteDialog = true },
-                                modifier = Modifier.height(36.dp)
+                            DropdownMenu(
+                                expanded = isNoteSortMenuExpanded,
+                                onDismissRequest = { isNoteSortMenuExpanded = false }
                             ) {
-                                Text("+ Add Note")
+                                DropdownMenuItem(
+                                    text = { Text("Newest First (Descending)") },
+                                    onClick = {
+                                        noteSortOrder = "descending"
+                                        isNoteSortMenuExpanded = false
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Oldest First (Ascending)") },
+                                    onClick = {
+                                        noteSortOrder = "ascending"
+                                        isNoteSortMenuExpanded = false
+                                    }
+                                )
                             }
+                        }
+                        
+                        // Add note button (right side)
+                        Button(
+                            onClick = { showAddNoteDialog = true },
+                            modifier = Modifier.height(36.dp)
+                        ) {
+                            Text("+ Add Note")
                         }
                     }
 
@@ -919,10 +909,73 @@ fun AddNoteDialog(
     onDismiss: () -> Unit
 ) {
     var isLabelDropdownExpanded by remember { mutableStateOf(false) }
+    val selectedLabel = availableLabels.find { it.id == selectedLabelId }
     
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add Note") },
+        title = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Add Note")
+                if (availableLabels.isNotEmpty()) {
+                    Box {
+                        IconButton(
+                            onClick = { isLabelDropdownExpanded = !isLabelDropdownExpanded }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Label,
+                                contentDescription = if (selectedLabel != null) "Change label" else "Add label",
+                                tint = if (selectedLabel != null) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                }
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = isLabelDropdownExpanded,
+                            onDismissRequest = { isLabelDropdownExpanded = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("None") },
+                                onClick = {
+                                    onLabelChange(null)
+                                    isLabelDropdownExpanded = false
+                                }
+                            )
+                            
+                            availableLabels.forEach { label ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(16.dp)
+                                                    .background(
+                                                        color = Color(android.graphics.Color.parseColor(label.colorCode)),
+                                                        shape = RoundedCornerShape(3.dp)
+                                                    )
+                                            )
+                                            Text(label.labelName)
+                                        }
+                                    },
+                                    onClick = {
+                                        onLabelChange(label.id)
+                                        isLabelDropdownExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -943,68 +996,6 @@ fun AddNoteDialog(
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3
                 )
-                
-                // Label selection
-                Text(
-                    text = "Label (Optional)",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    OutlinedButton(
-                        onClick = { isLabelDropdownExpanded = !isLabelDropdownExpanded },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        val selectedLabel = availableLabels.find { it.id == selectedLabelId }
-                        Text(
-                            text = selectedLabel?.labelName ?: "Select a label",
-                            modifier = Modifier.weight(1f),
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Start
-                        )
-                    }
-                    
-                    DropdownMenu(
-                        expanded = isLabelDropdownExpanded,
-                        onDismissRequest = { isLabelDropdownExpanded = false },
-                        modifier = Modifier.fillMaxWidth(0.9f)
-                    ) {
-                        // None option
-                        DropdownMenuItem(
-                            text = { Text("None") },
-                            onClick = {
-                                onLabelChange(null)
-                                isLabelDropdownExpanded = false
-                            }
-                        )
-                        
-                        // Available labels
-                        availableLabels.forEach { label ->
-                            DropdownMenuItem(
-                                text = {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(16.dp)
-                                                .background(
-                                                    color = Color(android.graphics.Color.parseColor(label.colorCode)),
-                                                    shape = RoundedCornerShape(3.dp)
-                                                )
-                                        )
-                                        Text(label.labelName)
-                                    }
-                                },
-                                onClick = {
-                                    onLabelChange(label.id)
-                                    isLabelDropdownExpanded = false
-                                }
-                            )
-                        }
-                    }
-                }
             }
         },
         confirmButton = {
