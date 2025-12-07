@@ -29,20 +29,15 @@ class MainActivity : ComponentActivity() {
             val themeViewModel: ThemeViewModel = hiltViewModel()
             val themeState by themeViewModel.themeState.collectAsState()
 
-            val onToggleTheme: () -> Unit = {
-                themeViewModel.toggleTheme()
-            }
-            
             val onThemeSelected: (AppTheme) -> Unit = { appTheme ->
                 themeViewModel.setTheme(appTheme)
             }
 
-            Crossfade(targetState = themeState) { state ->
-                Pep_NotesTheme(appTheme = state.appTheme, darkTheme = state.isDark) {
+            Crossfade(targetState = themeState.appTheme) { appTheme ->
+                Pep_NotesTheme(appTheme = appTheme) {
                     Scaffold(modifier = Modifier.fillMaxSize()) {
                         AppContent(
-                            themeState = state,
-                            onToggleTheme = onToggleTheme,
+                            themeState = themeState,
                             onThemeSelected = onThemeSelected
                         )
                     }
@@ -55,14 +50,12 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppContent(
     themeState: ThemeState,
-    onToggleTheme: () -> Unit,
     onThemeSelected: (AppTheme) -> Unit
 ) {
     val navController = rememberNavController()
     AppNavHost(
         navController = navController,
         themeState = themeState,
-        onToggleTheme = onToggleTheme,
         onThemeSelected = onThemeSelected
     )
 }

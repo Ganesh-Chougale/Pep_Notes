@@ -115,7 +115,8 @@ fun ExportImportScreen(
                     TextButton(onClick = { viewModel.cancelImport() }) {
                         Text("Cancel")
                     }
-                }
+                },
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
             )
         }
         Column(

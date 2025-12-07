@@ -61,6 +61,20 @@ class NoteViewModel @Inject constructor(
         }
     }
 
+    fun loadNoteById(noteId: Int) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                val note = noteRepository.getNoteById(noteId)
+                _selectedNote.value = note
+            } catch (e: Exception) {
+                _error.value = e.message
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
     fun createNote(personId: Int, title: String, text: String, labelId: Int? = null) {
         viewModelScope.launch {
             try {

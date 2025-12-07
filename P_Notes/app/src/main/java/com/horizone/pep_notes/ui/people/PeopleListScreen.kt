@@ -34,8 +34,6 @@ import kotlinx.coroutines.delay
 @Composable
 fun PeopleListScreen(
     navController: NavHostController,
-    isDark: Boolean,
-    onToggleTheme: () -> Unit,
     viewModel: PersonViewModel = hiltViewModel(),
     labelViewModel: LabelViewModel = hiltViewModel()
 ) {
@@ -91,30 +89,15 @@ fun PeopleListScreen(
                         .height(56.dp),
                     placeholder = { Text("Search people...") },
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                    ),
+                    colors = com.horizone.pep_notes.ui.theme.pepTextFieldColors(),
                     singleLine = true
                 )
-
-                androidx.compose.material3.IconButton(
-                    onClick = { onToggleTheme() },
-                    modifier = Modifier
-                        .weight(0.1f)
-                        .height(56.dp)
-                ) {
-                    Icon(
-                        imageVector = if (isDark) Icons.Filled.Brightness4 else Icons.Filled.Brightness7,
-                        contentDescription = if (isDark) "Switch to day theme" else "Switch to night theme"
-                    )
-                }
 
                 // Menu button (20% width)
                 androidx.compose.material3.IconButton(
                     onClick = { showMenuDialog = true },
                     modifier = Modifier
-                        .weight(0.1f)
+                        .weight(0.2f)
                         .height(56.dp)
                 ) {
                     Icon(Icons.Default.MoreVert, contentDescription = "Menu")
@@ -346,7 +329,8 @@ fun AddPersonDialog(
                     onValueChange = { personName = it },
                     label = { Text("Person Name") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    colors = com.horizone.pep_notes.ui.theme.pepTextFieldColors()
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -404,7 +388,8 @@ fun AddPersonDialog(
             androidx.compose.material3.TextButton(onClick = onDismiss) {
                 Text("Cancel", color = MaterialTheme.colorScheme.onSurface)
             }
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.surfaceVariant
     )
 
     if (showLabelPicker) {
@@ -645,7 +630,8 @@ fun LabelManagementDialog(
                                                 ) {
                                                     Text("OK")
                                                 }
-                                            }
+                                            },
+                                            containerColor = MaterialTheme.colorScheme.surfaceVariant
                                         )
                                     }
                                     
@@ -670,7 +656,8 @@ fun LabelManagementDialog(
                                                 ) {
                                                     Text("Cancel")
                                                 }
-                                            }
+                                            },
+                                            containerColor = MaterialTheme.colorScheme.surfaceVariant
                                         )
                                     }
                                     
@@ -715,10 +702,7 @@ fun LabelManagementDialog(
                                                             .fillMaxWidth()
                                                             .padding(bottom = 16.dp),
                                                         placeholder = { Text("Enter label name") },
-                                                        colors = TextFieldDefaults.colors(
-                                                            focusedContainerColor = MaterialTheme.colorScheme.surface,
-                                                            unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                                                        ),
+                                                        colors = com.horizone.pep_notes.ui.theme.pepTextFieldColors(),
                                                         singleLine = true
                                                     )
                                                     
@@ -818,7 +802,8 @@ fun LabelManagementDialog(
                                                 ) {
                                                     Text("Cancel")
                                                 }
-                                            }
+                                            },
+                                            containerColor = MaterialTheme.colorScheme.surfaceVariant
                                         )
                                     }
                                     
@@ -979,7 +964,8 @@ fun LabelManagementDialog(
                                                 ) {
                                                     Text("Cancel")
                                                 }
-                                            }
+                                            },
+                                            containerColor = MaterialTheme.colorScheme.surfaceVariant
                                         )
                                     }
 
@@ -1316,7 +1302,8 @@ fun MenuDialog(
             ) {
                 Text("Close")
             }
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.surfaceVariant
     )
 }
 

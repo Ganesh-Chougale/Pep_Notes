@@ -24,7 +24,6 @@ import com.horizone.pep_notes.viewmodel.ThemeState
 fun AppNavHost(
     navController: NavHostController,
     themeState: ThemeState,
-    onToggleTheme: () -> Unit,
     onThemeSelected: (AppTheme) -> Unit
 ) {
     NavHost(
@@ -33,9 +32,7 @@ fun AppNavHost(
     ) {
         composable(NavRoutes.PeopleList.route) {
             PeopleListScreen(
-                navController = navController,
-                isDark = themeState.isDark,
-                onToggleTheme = onToggleTheme
+                navController = navController
             )
         }
 
@@ -59,8 +56,7 @@ fun AppNavHost(
             val personId = backStackEntry.arguments?.getString("personId")?.toIntOrNull() ?: -1
             PersonNotesScreen(
                 personId = personId,
-                navController = navController,
-                onToggleTheme = onToggleTheme
+                navController = navController
             )
         }
 
@@ -68,22 +64,19 @@ fun AppNavHost(
             val noteId = backStackEntry.arguments?.getString("noteId")?.toIntOrNull() ?: -1
             NoteEditScreen(
                 noteId = noteId,
-                navController = navController,
-                onToggleTheme = onToggleTheme
+                navController = navController
             )
         }
 
         composable(NavRoutes.PersonLabels.route) {
             PersonLabelsScreen(
-                navController = navController,
-                onToggleTheme = onToggleTheme
+                navController = navController
             )
         }
 
         composable(NavRoutes.NoteLabels.route) {
             NoteLabelsScreen(
-                navController = navController,
-                onToggleTheme = onToggleTheme
+                navController = navController
             )
         }
 
@@ -96,7 +89,6 @@ fun AppNavHost(
         composable(NavRoutes.ThemePicker.route) {
             ThemePickerScreen(
                 currentTheme = themeState.appTheme,
-                isDark = themeState.isDark,
                 onThemeSelected = { appTheme ->
                     onThemeSelected(appTheme)
                     navController.popBackStack()

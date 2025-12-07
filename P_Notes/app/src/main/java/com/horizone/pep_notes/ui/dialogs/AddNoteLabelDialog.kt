@@ -190,10 +190,7 @@ fun AddNoteLabelDialog(
                             .fillMaxWidth()
                             .padding(bottom = 16.dp),
                         placeholder = { Text("Enter label name") },
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = MaterialTheme.colorScheme.surface,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                        ),
+                        colors = com.horizone.pep_notes.ui.theme.pepTextFieldColors(),
                         singleLine = true
                     )
 

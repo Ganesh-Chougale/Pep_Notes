@@ -1,6 +1,8 @@
 package com.horizone.pep_notes.ui.theme
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -14,7 +16,6 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun ThemePickerScreen(
     currentTheme: AppTheme,
-    isDark: Boolean,
     onThemeSelected: (AppTheme) -> Unit,
     onBack: () -> Unit
 ) {
@@ -24,6 +25,7 @@ fun ThemePickerScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
             Row(
@@ -49,10 +51,13 @@ fun ThemePickerScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             val themes = listOf(
-                AppTheme.GOTHAM,
-                AppTheme.FOREST,
-                AppTheme.OCEAN,
-                AppTheme.DESERT
+                AppTheme.GLASS,
+                AppTheme.DARK,
+                AppTheme.SOOTHING,
+                AppTheme.OCEAN_BLUE,
+                AppTheme.SUNSET_ORANGE,
+                AppTheme.FOREST_GREEN,
+                AppTheme.NEON_PURPLE
             )
 
             Column(
@@ -71,7 +76,7 @@ fun ThemePickerScreen(
                         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                     ) {
                         // Nested theme to show a small preview of this theme's palette
-                        Pep_NotesTheme(appTheme = theme, darkTheme = isDark) {
+                        Pep_NotesTheme(appTheme = theme) {
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -84,7 +89,15 @@ fun ThemePickerScreen(
                                 ) {
                                     Column {
                                         Text(
-                                            text = theme.name.lowercase().replaceFirstChar { it.uppercase() },
+                                            text = when (theme) {
+                                                AppTheme.GLASS -> "Glass"
+                                                AppTheme.DARK -> "Dark"
+                                                AppTheme.SOOTHING -> "Soothing"
+                                                AppTheme.OCEAN_BLUE -> "Ocean Blue"
+                                                AppTheme.SUNSET_ORANGE -> "Sunset Orange"
+                                                AppTheme.FOREST_GREEN -> "Forest Green"
+                                                AppTheme.NEON_PURPLE -> "Neon Purple"
+                                            },
                                             style = MaterialTheme.typography.titleMedium
                                         )
                                         if (isCurrent) {

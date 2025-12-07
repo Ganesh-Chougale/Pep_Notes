@@ -99,7 +99,8 @@ fun PersonEditScreen(
                 value = personName,
                 onValueChange = { personName = it },
                 label = { Text("Person Name") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors = com.horizone.pep_notes.ui.theme.pepTextFieldColors()
             )
 
             Spacer(modifier = Modifier.height(16.dp))

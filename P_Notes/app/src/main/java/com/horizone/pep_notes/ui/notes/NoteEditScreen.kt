@@ -1,6 +1,10 @@
 package com.horizone.pep_notes.ui.notes
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -8,8 +12,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -35,6 +41,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -48,17 +55,24 @@ import java.time.LocalDateTime
 fun NoteEditScreen(
     noteId: Int,
     navController: NavHostController,
-    onToggleTheme: () -> Unit,
     viewModel: NoteViewModel = hiltViewModel()
 ) {
     val selectedNote by viewModel.selectedNote.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val allNoteLabels by viewModel.noteLabels.collectAsState(initial = emptyList())
     var noteText by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
+    var selectedLabelId by remember { mutableStateOf<Int?>(null) }
 
     LaunchedEffect(noteId) {
         if (noteId != -1) {
-            // Load note from database
-            // For now, we'll use a placeholder
+            viewModel.loadNoteById(noteId)
+        }
+    }
+
+    LaunchedEffect(selectedNote) {
+        selectedNote?.let { note ->
+            noteText = note.text
+            selectedLabelId = note.labelId
         }
     }
 
@@ -72,12 +86,6 @@ fun NoteEditScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = onToggleTheme) {
-                        Icon(
-                            imageVector = Icons.Default.Star,
-                            contentDescription = "Toggle theme"
-                        )
-                    }
                     if (noteId != -1) {
                         IconButton(onClick = {
                             selectedNote?.let { note ->
@@ -112,7 +120,8 @@ fun NoteEditScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(200.dp),
-                maxLines = 10
+                maxLines = 10,
+                colors = com.horizone.pep_notes.ui.theme.pepTextFieldColors()
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -132,6 +141,57 @@ fun NoteEditScreen(
                 )
             }
 
+            // Label selection (Max 1)
+            if (allNoteLabels.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "Assign/Remove Label (Max 1)",
+                    style = MaterialTheme.typography.labelMedium
+                )
+
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    allNoteLabels.forEach { label ->
+                        val isSelected = label.id == selectedLabelId
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    selectedLabelId = if (isSelected) null else label.id
+                                },
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .background(
+                                        color = if (isSelected) {
+                                            Color(android.graphics.Color.parseColor(label.colorCode))
+                                        } else {
+                                            Color.Transparent
+                                        },
+                                        shape = RoundedCornerShape(4.dp)
+                                    )
+                                    .border(
+                                        width = 2.dp,
+                                        color = Color(android.graphics.Color.parseColor(label.colorCode)),
+                                        shape = RoundedCornerShape(4.dp)
+                                    )
+                            )
+
+                            Text(
+                                text = label.labelName,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
 
             // Action buttons
@@ -147,7 +207,12 @@ fun NoteEditScreen(
                             } else {
                                 // Update existing note
                                 selectedNote?.let { note ->
-                                    viewModel.updateNote(note.copy(text = noteText))
+                                    viewModel.updateNote(
+                                        note.copy(
+                                            text = noteText,
+                                            labelId = selectedLabelId
+                                        )
+                                    )
                                 }
                             }
                             navController.popBackStack()

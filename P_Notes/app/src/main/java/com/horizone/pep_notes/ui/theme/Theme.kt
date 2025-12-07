@@ -1,129 +1,132 @@
 package com.horizone.pep_notes.ui.theme
 
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.TextFieldColors
+import androidx.compose.material3.TextFieldDefaults
+
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 
-private val ForestDarkColorScheme = darkColorScheme(
-    primary = ForestPrimaryDark,
-    onPrimary = ForestOnPrimaryDark,
-    secondary = ForestSecondaryDark,
-    onSecondary = ForestOnSecondaryDark,
-    background = ForestBackgroundDark,
-    onBackground = ForestOnBackgroundDark,
-    surface = ForestSurfaceDark,
-    onSurface = ForestOnSurfaceDark,
-    surfaceVariant = ForestSurfaceVariantDark,
-    onSurfaceVariant = ForestOnSurfaceVariantDark
+private val DarkColorScheme = lightColorScheme(
+    primary = DarkPrimary,
+    onPrimary = DarkOnPrimary,
+    secondary = DarkPrimary,
+    onSecondary = DarkOnPrimary,
+    background = DarkBackground,
+    onBackground = DarkOnBackground,
+    surface = DarkSurface,
+    onSurface = DarkOnSurface,
+    surfaceVariant = DarkSurfaceVariant,
+    onSurfaceVariant = DarkOnSurfaceVariant
 )
 
-private val ForestLightColorScheme = lightColorScheme(
-    primary = ForestPrimaryLight,
-    onPrimary = ForestOnPrimaryLight,
-    secondary = ForestSecondaryLight,
-    onSecondary = ForestOnSecondaryLight,
-    background = ForestBackgroundLight,
-    onBackground = ForestOnBackgroundLight,
-    surface = ForestSurfaceLight,
-    onSurface = ForestOnSurfaceLight,
-    surfaceVariant = ForestSurfaceVariantLight,
-    onSurfaceVariant = ForestOnSurfaceVariantLight
+private val SoothingColorScheme = lightColorScheme(
+    primary = SoothingPrimary,
+    onPrimary = SoothingOnPrimary,
+    secondary = SoothingPrimary,
+    onSecondary = SoothingOnPrimary,
+    background = SoothingBackground,
+    onBackground = SoothingOnBackground,
+    surface = SoothingSurface,
+    onSurface = SoothingOnSurface,
+    surfaceVariant = SoothingSurfaceVariant,
+    onSurfaceVariant = SoothingOnSurfaceVariant
 )
 
-private val OceanDarkColorScheme = darkColorScheme(
-    primary = OceanPrimaryDark,
-    onPrimary = OceanOnPrimaryDark,
-    secondary = OceanSecondaryDark,
-    onSecondary = OceanOnSecondaryDark,
-    background = OceanBackgroundDark,
-    onBackground = OceanOnBackgroundDark,
-    surface = OceanSurfaceDark,
-    onSurface = OceanOnSurfaceDark,
-    surfaceVariant = OceanSurfaceVariantDark,
-    onSurfaceVariant = OceanOnSurfaceVariantDark
+private val OceanBlueColorScheme = lightColorScheme(
+    primary = OceanBluePrimary,
+    onPrimary = OceanBlueOnPrimary,
+    secondary = OceanBluePrimary,
+    onSecondary = OceanBlueOnPrimary,
+    background = OceanBlueBackground,
+    onBackground = OceanBlueOnBackground,
+    surface = OceanBlueSurface,
+    onSurface = OceanBlueOnSurface,
+    surfaceVariant = OceanBlueSurfaceVariant,
+    onSurfaceVariant = OceanBlueOnSurfaceVariant
 )
 
-private val OceanLightColorScheme = lightColorScheme(
-    primary = OceanPrimaryLight,
-    onPrimary = OceanOnPrimaryLight,
-    secondary = OceanSecondaryLight,
-    onSecondary = OceanOnSecondaryLight,
-    background = OceanBackgroundLight,
-    onBackground = OceanOnBackgroundLight,
-    surface = OceanSurfaceLight,
-    onSurface = OceanOnSurfaceLight,
-    surfaceVariant = OceanSurfaceVariantLight,
-    onSurfaceVariant = OceanOnSurfaceVariantLight
+private val SunsetOrangeColorScheme = lightColorScheme(
+    primary = SunsetOrangePrimary,
+    onPrimary = SunsetOrangeOnPrimary,
+    secondary = SunsetOrangePrimary,
+    onSecondary = SunsetOrangeOnPrimary,
+    background = SunsetOrangeBackground,
+    onBackground = SunsetOrangeOnBackground,
+    surface = SunsetOrangeSurface,
+    onSurface = SunsetOrangeOnSurface,
+    surfaceVariant = SunsetOrangeSurfaceVariant,
+    onSurfaceVariant = SunsetOrangeOnSurfaceVariant
 )
 
-private val DesertDarkColorScheme = darkColorScheme(
-    primary = DesertPrimaryDark,
-    onPrimary = DesertOnPrimaryDark,
-    secondary = DesertSecondaryDark,
-    onSecondary = DesertOnSecondaryDark,
-    background = DesertBackgroundDark,
-    onBackground = DesertOnBackgroundDark,
-    surface = DesertSurfaceDark,
-    onSurface = DesertOnSurfaceDark,
-    surfaceVariant = DesertSurfaceVariantDark,
-    onSurfaceVariant = DesertOnSurfaceVariantDark
+private val ForestGreenColorScheme = lightColorScheme(
+    primary = ForestGreenPrimary,
+    onPrimary = ForestGreenOnPrimary,
+    secondary = ForestGreenPrimary,
+    onSecondary = ForestGreenOnPrimary,
+    background = ForestGreenBackground,
+    onBackground = ForestGreenOnBackground,
+    surface = ForestGreenSurface,
+    onSurface = ForestGreenOnSurface,
+    surfaceVariant = ForestGreenSurfaceVariant,
+    onSurfaceVariant = ForestGreenOnSurfaceVariant
 )
 
-private val DesertLightColorScheme = lightColorScheme(
-    primary = DesertPrimaryLight,
-    onPrimary = DesertOnPrimaryLight,
-    secondary = DesertSecondaryLight,
-    onSecondary = DesertOnSecondaryLight,
-    background = DesertBackgroundLight,
-    onBackground = DesertOnBackgroundLight,
-    surface = DesertSurfaceLight,
-    onSurface = DesertOnSurfaceLight,
-    surfaceVariant = DesertSurfaceVariantLight,
-    onSurfaceVariant = DesertOnSurfaceVariantLight
+private val NeonPurpleColorScheme = lightColorScheme(
+    primary = NeonPurplePrimary,
+    onPrimary = NeonPurpleOnPrimary,
+    secondary = NeonPurplePrimary,
+    onSecondary = NeonPurpleOnPrimary,
+    background = NeonPurpleBackground,
+    onBackground = NeonPurpleOnBackground,
+    surface = NeonPurpleSurface,
+    onSurface = NeonPurpleOnSurface,
+    surfaceVariant = NeonPurpleSurfaceVariant,
+    onSurfaceVariant = NeonPurpleOnSurfaceVariant
 )
 
-private val GothamDarkColorScheme = darkColorScheme(
-    primary = GothamPrimaryDark,
-    onPrimary = GothamOnPrimaryDark,
-    secondary = GothamSecondaryDark,
-    onSecondary = GothamOnSecondaryDark,
-    background = GothamBackgroundDark,
-    onBackground = GothamOnBackgroundDark,
-    surface = GothamSurfaceDark,
-    onSurface = GothamOnSurfaceDark,
-    surfaceVariant = GothamSurfaceVariantDark,
-    onSurfaceVariant = GothamOnSurfaceVariantDark,
-    outline = GothamOutlineDark,
-    outlineVariant = GothamOutlineVariantDark,
-    onSecondaryContainer = GothamOnSecondaryDark,
-    onTertiary = GothamOnSecondaryDark
+private val GlassColorScheme = lightColorScheme(
+    primary = GlassPrimary,
+    onPrimary = GlassOnPrimary,
+    secondary = GlassPrimary,
+    onSecondary = GlassOnPrimary,
+    background = GlassBackground,
+    onBackground = GlassOnBackground,
+    surface = GlassSurface,
+    onSurface = GlassOnSurface,
+    surfaceVariant = GlassSurfaceVariant,
+    onSurfaceVariant = GlassOnSurfaceVariant
 )
 
-private val GothamLightColorScheme = lightColorScheme(
-    primary = GothamPrimaryLight,
-    onPrimary = GothamOnPrimaryLight,
-    secondary = GothamSecondaryLight,
-    onSecondary = GothamOnSecondaryLight,
-    background = GothamBackgroundLight,
-    onBackground = GothamOnBackgroundLight,
-    surface = GothamSurfaceLight,
-    onSurface = GothamOnSurfaceLight,
-    surfaceVariant = GothamSurfaceVariantLight,
-    onSurfaceVariant = GothamOnSurfaceVariantLight
-)
+@Composable
+fun pepTextFieldColors(): TextFieldColors {
+    return TextFieldDefaults.colors(
+        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+        cursorColor = MaterialTheme.colorScheme.primary,
+        focusedIndicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
+        unfocusedIndicatorColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
+        focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.9f),
+        unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+    )
+}
 
 @Composable
 fun Pep_NotesTheme(
     appTheme: AppTheme,
-    darkTheme: Boolean,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when (appTheme) {
-        AppTheme.FOREST -> if (darkTheme) ForestDarkColorScheme else ForestLightColorScheme
-        AppTheme.OCEAN -> if (darkTheme) OceanDarkColorScheme else OceanLightColorScheme
-        AppTheme.DESERT -> if (darkTheme) DesertDarkColorScheme else DesertLightColorScheme
-        AppTheme.GOTHAM -> if (darkTheme) GothamDarkColorScheme else GothamLightColorScheme
+        AppTheme.GLASS -> GlassColorScheme
+        AppTheme.DARK -> DarkColorScheme
+        AppTheme.SOOTHING -> SoothingColorScheme
+        AppTheme.OCEAN_BLUE -> OceanBlueColorScheme
+        AppTheme.SUNSET_ORANGE -> SunsetOrangeColorScheme
+        AppTheme.FOREST_GREEN -> ForestGreenColorScheme
+        AppTheme.NEON_PURPLE -> NeonPurpleColorScheme
     }
 
     MaterialTheme(

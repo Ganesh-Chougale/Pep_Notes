@@ -28,7 +28,6 @@ import com.horizone.pep_notes.viewmodel.PersonViewModel
 fun PersonNotesScreen(
     personId: Int,
     navController: NavHostController,
-    onToggleTheme: () -> Unit,
     noteViewModel: NoteViewModel = hiltViewModel(),
     personViewModel: PersonViewModel = hiltViewModel()
 ) {
@@ -51,14 +50,6 @@ fun PersonNotesScreen(
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = onToggleTheme) {
-                        Icon(
-                            imageVector = Icons.Default.Star,
-                            contentDescription = "Toggle theme"
-                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -245,7 +236,8 @@ fun AddNoteDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(120.dp),
-                maxLines = 5
+                maxLines = 5,
+                colors = com.horizone.pep_notes.ui.theme.pepTextFieldColors()
             )
         },
         confirmButton = {
@@ -263,6 +255,7 @@ fun AddNoteDialog(
             androidx.compose.material3.TextButton(onClick = onDismiss) {
                 Text("Cancel")
             }
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.surfaceVariant
     )
 }

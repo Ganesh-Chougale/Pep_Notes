@@ -47,7 +47,6 @@ import com.horizone.pep_notes.viewmodel.LabelViewModel
 @Composable
 fun PersonLabelsScreen(
     navController: NavHostController,
-    onToggleTheme: () -> Unit,
     viewModel: LabelViewModel = hiltViewModel()
 ) {
     val labels by viewModel.personLabels.collectAsState(initial = emptyList())
@@ -60,14 +59,6 @@ fun PersonLabelsScreen(
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = onToggleTheme) {
-                        Icon(
-                            imageVector = Icons.Default.Star,
-                            contentDescription = "Toggle theme"
-                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -175,7 +166,8 @@ fun AddLabelDialog(
                 value = labelName,
                 onValueChange = { labelName = it },
                 label = { Text("Label Name") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors = com.horizone.pep_notes.ui.theme.pepTextFieldColors()
             )
         },
         confirmButton = {
@@ -193,6 +185,7 @@ fun AddLabelDialog(
             androidx.compose.material3.TextButton(onClick = onDismiss) {
                 Text("Cancel")
             }
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.surfaceVariant
     )
 }

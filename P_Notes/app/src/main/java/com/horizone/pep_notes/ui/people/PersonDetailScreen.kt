@@ -233,10 +233,7 @@ fun PersonDetailScreen(
                                             }
                                         }
                                     },
-                                    colors = TextFieldDefaults.colors(
-                                        focusedContainerColor = MaterialTheme.colorScheme.surface,
-                                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                                    )
+                                    colors = com.horizone.pep_notes.ui.theme.pepTextFieldColors()
                                 )
                                 
                                 // Clear filter button
@@ -659,7 +656,8 @@ fun PersonDetailScreen(
                 ) {
                     Text("Cancel")
                 }
-            }
+            },
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
     }
 
@@ -787,7 +785,8 @@ fun EditConfirmDialog(
                     value = editedName,
                     onValueChange = onEditedNameChange,
                     label = { Text("New name") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = com.horizone.pep_notes.ui.theme.pepTextFieldColors()
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -893,7 +892,8 @@ fun DeleteConfirmDialog(
                     value = confirmationInput,
                     onValueChange = onConfirmationInputChange,
                     label = { Text("Enter name") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = com.horizone.pep_notes.ui.theme.pepTextFieldColors()
                 )
             }
         },
@@ -1071,7 +1071,8 @@ fun AddNoteDialog(
                     onValueChange = onNoteTitleChange,
                     label = { Text("Note Title (Optional)") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    colors = com.horizone.pep_notes.ui.theme.pepTextFieldColors()
                 )
                 
                 TextField(
@@ -1079,7 +1080,8 @@ fun AddNoteDialog(
                     onValueChange = onNoteTextChange,
                     label = { Text("Note content") },
                     modifier = Modifier.fillMaxWidth(),
-                    minLines = 3
+                    minLines = 3,
+                    colors = com.horizone.pep_notes.ui.theme.pepTextFieldColors()
                 )
 
                 if (selectedLabel != null) {
@@ -1126,7 +1128,8 @@ fun AddNoteDialog(
             TextButton(onClick = onDismiss) {
                 Text("Cancel", color = MaterialTheme.colorScheme.onSurface)
             }
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.surfaceVariant
     )
 }
 
@@ -1166,7 +1169,8 @@ fun FinalDeleteConfirmDialog(
             TextButton(onClick = onDismiss) {
                 Text("Cancel")
             }
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.surfaceVariant
     )
 }
 
@@ -1229,7 +1233,8 @@ fun PersonDetailsDialog(
             TextButton(onClick = onDismiss) {
                 Text("Close")
             }
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.surfaceVariant
     )
 }
 
@@ -1280,7 +1285,8 @@ fun EditNoteConfirmDialog(
                     onValueChange = onEditedTitleChange,
                     label = { Text("Title") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    colors = com.horizone.pep_notes.ui.theme.pepTextFieldColors()
                 )
 
                 // Original vs Current Text
@@ -1304,7 +1310,8 @@ fun EditNoteConfirmDialog(
                     onValueChange = onEditedTextChange,
                     label = { Text("Note content") },
                     modifier = Modifier.fillMaxWidth(),
-                    minLines = 3
+                    minLines = 3,
+                    colors = com.horizone.pep_notes.ui.theme.pepTextFieldColors()
                 )
 
                 // Label selection (Max 1)
@@ -1368,6 +1375,7 @@ fun EditNoteConfirmDialog(
             TextButton(onClick = onDismiss) {
                 Text("Cancel")
             }
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.surfaceVariant
     )
 }
